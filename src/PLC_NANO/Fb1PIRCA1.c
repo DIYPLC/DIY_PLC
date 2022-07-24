@@ -2,9 +2,6 @@
 #include <stdbool.h>        //bool true false
 #include <iso646.h>         //and or not
 #include "Fb1PIRCA1.h"      //ПИД- регулятор давления.
-//PLC:
-#include "GlobalVar.h"      //Глобальные переменные.
-//LibPlc:
 #include "FbModeSelector.h" //Переключатель режимов работы.
 #include "FbWordToBits.h"   //Преобразование слова в 16 бит.
 #include "FbBitsToWord.h"   //Преобразование 16 бит в слово.
@@ -13,15 +10,12 @@
 #include "FbLimit.h"        //Амплитудный ограничитель.
 #include "FbRamp.h"         //Рампа разгона торможения.
 #include "FbScale.h"        //Линейное преобразование.
-#include "FbFilterNaN.h"    //Фильтр NaN и Inf для чисел REAL.
 
 #define AiSensorPressure       p->AiSensorPressure
 #define DiDriveReady           p->DiDriveReady
 #define HmiSetpoint            p->HmiSetpoint
 #define HmiControlSignalManual p->HmiControlSignalManual
 #define HmiControlWord         p->HmiControlWord
-#define PLC_Ts                 p->PLC_Ts
-#define PLC_Reset              p->PLC_Reset
 #define AoDriveFrequency       p->AoDriveFrequency
 #define DoDriveStart           p->DoDriveStart
 #define HmiProcessVariable     p->HmiProcessVariable
@@ -29,10 +23,11 @@
 #define HmiStatusWord          p->HmiStatusWord
 #define HmiErrorWord           p->HmiErrorWord
 
-void Fb1PIRCA1(struct Db1PIRCA1 *p)
+void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давления.
 {
   //Внутренние переменные, не сохраняемые.
   float Ts; //Шаг дискретизации по времени [с].
+  bool  Reset; //Сброс при перезагрузке.
   float ProcessVariable    ; //
   float Setpoint           ; //
   float ControlSignal      ; //
@@ -48,6 +43,9 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p)
   bool  ErrorControlSignalLo  ; //
   bool  ErrorControlSignalHi  ; //
   bool  ErrorDrive            ; //
+
+  Ts = ((float)(p->Ts_ms)) * 0.001; //Шаг дискретизации по времени [с].
+  Reset = p->Reset; //Сброс при перезагрузке.
 
   //Раскладываем слово управления от HMI на 16 бит.
   //                    DbWordToBits
@@ -107,7 +105,7 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p)
   DbModeSelector1.ButtonManual = HmiButtonManual           ; //Кнопка "Ручной режим".
   DbModeSelector1.ButtonAuto   = HmiButtonAuto             ; //Кнопка "Автоматический режим".
   DbModeSelector1.Error        = not(DiDriveReady)         ; //Отсутствие готовности системы к работе.
-  DbModeSelector1.Reset        = PLC_Reset                 ; //Сброс при перезагрузке.
+  DbModeSelector1.Reset        = Reset                     ; //Сброс при перезагрузке.
   FbModeSelector(&DbModeSelector1)                         ; //Переключатель режимов работы.
   HmiModeStop                  = DbModeSelector1.LampStop  ; //Флаг "Активен режим СТОП".
   HmiModeManual                = DbModeSelector1.LampManual; //Флаг "Активен РУЧНОЙ режим".
@@ -146,7 +144,7 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p)
   static struct DbFilterA DbFilterA_PV = {0};
   DbFilterA_PV.In = DbScalePV.Out   ; //Входной сигнал до фильтрации.
   DbFilterA_PV.Tf = 0.1             ; //Постоянная времени фильтра [с].
-  DbFilterA_PV.Ts = PLC_Ts          ; //Шаг дискретизации по времени [с].
+  DbFilterA_PV.Ts = Ts              ; //Шаг дискретизации по времени [с].
   FbFilterA(&DbFilterA_PV)          ; //Фильтр апериодический.
   //              = DbFilterA_PV.Out; //Выходной сигнал после фильтрации.
 
@@ -181,7 +179,7 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p)
   DbLimit_SP.OutMax = 10.0                        ; //Максимальное значение выхода.
   DbLimit_SP.OutMin = 0.0                         ; //Минимальное значение выхода.
   FbLimit(&DbLimit_SP)                            ; //Амплитудный ограничитель.
-  Setpoint           = DbLimit_SP.Out             ; //Выход амплитудного ограничителя.
+  Setpoint          = DbLimit_SP.Out              ; //Выход амплитудного ограничителя.
 
   //Управление в ручном режиме от HMI 0...5000 (0...50[Гц])
   ControlSignalManual = ((float)HmiControlSignalManual) * 100.0;
@@ -215,7 +213,7 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p)
   DbPIDcontrol1.DBmin           = -0.0001            ; //Зона нечувствительности к ошибке регулирования, минимум.
   DbPIDcontrol1.OutMax          = 50.0               ; //Максимальное значение сигнала управления.
   DbPIDcontrol1.OutMin          = 0.0                ; //Минимальное значение сигнала управления.
-  DbPIDcontrol1.Ts              = PLC_Ts             ; //Шаг дискретизации по времени в секундах.
+  DbPIDcontrol1.Ts              = Ts                 ; //Шаг дискретизации по времени в секундах.
   DbPIDcontrol1.Manual          = ControlSignalManual; //Сигнал управления в ручном режиме работы.
   DbPIDcontrol1.ManOn           = not(HmiModeAuto)   ; //Включить ручной режим работы регулятора.
   FbPIDcontrol(&DbPIDcontrol1)                       ; //ПИД-регулятор.
@@ -234,7 +232,7 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p)
   DbRamp1.In    = DbPIDcontrol1.Out; //Входной сигнал.
   DbRamp1.TAcc  = 0.1              ; //Время разгона на единицу [с].
   DbRamp1.TDec  = 0.1              ; //Время торможения на единицу [c].
-  DbRamp1.Ts    = PLC_Ts           ; //Шаг дискретизации по времени [с].
+  DbRamp1.Ts    = Ts               ; //Шаг дискретизации по времени [с].
   FbRamp(&DbRamp1)                 ; //Рампа разгона / торможения.
   ControlSignal = DbRamp1.Out      ; //Выходной сигнал.
 

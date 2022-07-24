@@ -5,14 +5,8 @@ extern "C"
 {
 #endif
 
-void PLC_Ts_ms(struct GlobalVar *p);
-void PLC_Ts(struct GlobalVar *p);
-void PLC_Ts_ms_max(struct GlobalVar *p);
-void PLC_Pulses_1000ms(struct GlobalVar *p);
-void PLC_Digital_output_init(void);
-void PLC_Digital_output_cyclic(struct GlobalVar *p);
-void PLC_Digital_input_cyclic(struct GlobalVar *p);
-void Program_delay_500ms(void);
+uint32_t Calc_Ts_ms(uint32_t Uptime_ms); //Время предидущего скана ПЛК [мс].
+uint32_t Calc_Ts_ms_max(uint32_t Ts_ms); //Максимальное время скана ПЛК [мс].
 
 #ifdef __cplusplus
 }

@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <iso646.h>
-#include "GlobalVar.h"
+#include "GlobalVar.h" //Глобальные переменные ПЛК.
 #include "MODBUS.h"
 
 #define SlaveAddress p->SlaveAddress

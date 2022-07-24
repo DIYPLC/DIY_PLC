@@ -5,7 +5,7 @@ extern "C"
 {
 #endif
 
-void FcTaskCyclic1(void);
+void FcTaskCyclic1(bool Reset, uint32_t Ts_ms); //Задача выполняется с плавающим временем цикла.
 
 #ifdef __cplusplus
 }
