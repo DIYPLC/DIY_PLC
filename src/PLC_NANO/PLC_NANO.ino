@@ -19,6 +19,17 @@
 struct Modbus Modbus0 = {0}; //Сеть MODBUS ASCII SALVE.
 struct GlobalVar GV = {0}; //Глобальные переменные ПЛК.
 
+// Дерево вызовов.
+// 
+// int main(void); //PLC_NANO.ino or main.cpp
+//   while (1)
+//     |
+//     +-void FcTaskCyclic1(bool Reset, uint32_t Ts_ms); //FcTaskCyclic1.c
+//       |
+//       +-void Fb1PIRCA1(struct Db1PIRCA1 *p); //Fb1PIRCA1.c
+//         |
+//         +-void FbPIDcontrol(struct DbPIDcontrol *p); //FbPIDcontrol.c
+
 int main(void)
 {
   GPIO_INIT();
