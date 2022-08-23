@@ -5,7 +5,7 @@
 //   -|Amplitude        Sine|->-
 //   -|Period         Cosine|->-
 //   -|Phase      RectangleR|->-
-//   -|Offset       ctangleB|->-
+//   -|Offset     RectangleR|->-
 //   -|PulseTime    Triangle|->-
 //   -|Ts               Prnd|->-
 //    +---------------------+

@@ -18,7 +18,7 @@ void FcTask100ms(bool Reset, uint32_t Ts_ms) //Задача выполняетс
   //   -|Amplitude        Sine|->-
   //   -|Period         Cosine|->-
   //   -|Phase      RectangleR|->-
-  //   -|Offset       ctangleB|->-
+  //   -|Offset     RectangleB|->-
   //   -|PulseTime    Triangle|->-
   //   -|Ts               Prnd|->-
   //    +---------------------+

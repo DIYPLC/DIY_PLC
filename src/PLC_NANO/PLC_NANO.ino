@@ -20,7 +20,7 @@ struct Modbus Modbus0 = {0}; //Сеть MODBUS ASCII SALVE.
 struct GlobalVar GV = {0}; //Глобальные переменные ПЛК.
 
 // Дерево вызовов.
-// 
+//
 // int main(void); //PLC_NANO.ino or main.cpp
 //   while (1)
 //     |
@@ -74,7 +74,7 @@ int main(void)
 ISR(TIMER2_COMPA_vect) //Циклическое прерывание каждую 1ms
 {
   cli(); //Выключить все прерывания.
-  GV.Uptime_ms = GV.Uptime_ms + 1;
+  GV.Uptime_ms = GV.Uptime_ms + 1; //Аналог Arduino millis();
   sei(); //Включить все прерывания.
 }
 
