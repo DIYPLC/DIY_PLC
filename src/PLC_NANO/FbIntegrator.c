@@ -22,6 +22,7 @@ void FbIntegrator(struct DbIntegrator *p)
   else
   {
     Out = Out + (In + InPrevious) * 0.5 * Ts; // Трапецеидальный интегратор
+    InPrevious = In;
   }
 
   if (Reset) //Начальные условия интегрирования применяются при сбросе.
