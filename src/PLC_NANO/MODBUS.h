@@ -29,16 +29,16 @@ enum MODBUS_STATES
 struct Modbus
 {
   //Структура спроектированна так чтоб можно было обслуживать сразу несколько UART и быть двойным подчиненным.
-  uint8_t  SlaveAddress; //Адресс устройства в сети MODBUS ASCII.
-  uint16_t Counter1    ; //Адресс последнего элемнта для Buffer1[].
-  uint16_t Counter2    ; //Адресс последнего элемнта для Buffer2[].
-  uint16_t Counter3    ; //Адресс последнего элемнта для Buffer3[].
+  uint8_t  SlaveAddress; //Адрес устройства в сети MODBUS ASCII.
+  uint16_t Counter1    ; //Адрес последнего элемента для Buffer1[].
+  uint16_t Counter2    ; //Адрес последнего элемента для Buffer2[].
+  uint16_t CntPDU      ; //Адрес последнего элемента для PDU[] (количество байт в массиве - 1).
   uint16_t Counter4    ; //Счетчик переданных байт для Buffer1[].
   uint8_t  State       ; //Граф состояний.
   uint8_t  UDR         ; //Байт для UART.
   uint8_t  Buffer1[32] ; //Патек в формате ASCII. //rx ascii
-  uint8_t  Buffer2[32] ; //Патек в формате HEX. //rx bytes ADU?
-  uint8_t  Buffer3[32] ; //Пакет PDU. //rx tx PDU <> MW[]
+  uint8_t  Buffer2[16] ; //Патек в формате HEX начиная с адреса заканчивая суммой (без : CR LF)
+  uint8_t  PDU[16] ; //Пакет PDU в формате HEX начиная с кода функции (без контрольной суммы)
   uint16_t ErrorCounter; //Счетчик ошибок.
 };
 

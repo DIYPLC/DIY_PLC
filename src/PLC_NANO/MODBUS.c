@@ -13,16 +13,19 @@
 #include "GlobalVar.h" //Глобальные переменные ПЛК.
 #include "MODBUS.h"
 
+#define INTERRUPT_OFF(); asm volatile ("cli");
+#define INTERRUPT_ON(); asm volatile ("sei");
+
 #define SlaveAddress p->SlaveAddress
 #define Counter1     p->Counter1
 #define Counter2     p->Counter2
-#define Counter3     p->Counter3
+#define CntPDU       p->CntPDU
 #define Counter4     p->Counter4
 #define State        p->State
 #define UDR          p->UDR
 #define Buffer1      p->Buffer1
 #define Buffer2      p->Buffer2
-#define Buffer3      p->Buffer3
+#define PDU          p->PDU
 #define ErrorCounter p->ErrorCounter
 
 #define SIZE_BUFFER_1 sizeof(Buffer1)
@@ -169,8 +172,8 @@ void FbModbusConvertASCIItoPDU(struct Modbus *p)
   {
     for (uint16_t i = 1; (i <= (Counter2 - 1)); i = i + 1)
     {
-      Counter3 = i - 1;
-      Buffer3[Counter3] = Buffer2[i];
+      CntPDU = i - 1;
+      PDU[CntPDU] = Buffer2[i];
     }
     State = MODBUS_STATE_READ_PDU;
   }
@@ -183,20 +186,21 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
   //Количество 16 битных регистров MODBUS 32слова 64байта MW[0]...MW31.
   const uint16_t SIZE_MODBUS_REGISTER = (sizeof(ptr->MW) / 2);
   //Декодирование PDU.
-  uint8_t CurrentModbusFunction = Buffer3[0];
-  uint16_t StartingAddress = 0;
-  uint16_t EndingAddress = 0;
-  uint16_t QuantityOfRegister = 0;
-  uint16_t ByteCounter = 0;
+  uint8_t ModbusFunctionCode = PDU[0];
+  uint16_t RegisterStartAddress = 0;
+  uint16_t RegisterCount = 0;
+  uint16_t ByteCount = 0;
+  uint16_t RegisterEndAddress = 0;
+
   //Селектрор функций.
   if (State == MODBUS_STATE_READ_PDU)
   {
     State = MODBUS_STATE_FUN_ERROR; //Сообщение об ошибке.
-    if (CurrentModbusFunction == FUN_READ_HOLDING_REGISTERS)
+    if (ModbusFunctionCode == FUN_READ_HOLDING_REGISTERS)
     {
       State = MODBUS_STATE_FUN_READ_HOLDING_REGISTERS; //Функция 3 MODBUS.
     }
-    if (CurrentModbusFunction == FUN_WRITE_MULTIPLE_HOLDING_REGISTERS)
+    if (ModbusFunctionCode == FUN_WRITE_MULTIPLE_HOLDING_REGISTERS)
     {
       State = MODBUS_STATE_FUN_WRITE_MULTIPLE_HOLDING_REGISTERS; //Функция 16 MODBUS.
     }
@@ -205,82 +209,102 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
   switch (State)
   {
     //Сообщение об ошибке.
-    case MODBUS_STATE_FUN_ERROR:
+    case MODBUS_STATE_FUN_ERROR: //Сообщение с принятым кодом функции не поддерживается.
       {
-        Buffer3[0] = CurrentModbusFunction;
-        Buffer3[1] = ERROR_ILLEGAL_FUNCTION;
-        Counter3 = 1;
+        PDU[0] = ModbusFunctionCode;
+        PDU[1] = ERROR_ILLEGAL_FUNCTION;
+        CntPDU = 1;
         State = MODBUS_STATE_PDU_PROCESSING_OK;
         ErrorCounter++;
         break;
       }
+
     //Функция 3 MODBUS.
     case MODBUS_STATE_FUN_READ_HOLDING_REGISTERS:
       {
-        StartingAddress = TwoByteToWord(Buffer3[2], Buffer3[1]);
-        QuantityOfRegister = TwoByteToWord(Buffer3[4], Buffer3[3]);
-        EndingAddress = StartingAddress + (QuantityOfRegister - 1);
-        ByteCounter = QuantityOfRegister * 2;
+        RegisterStartAddress = TwoByteToWord(PDU[2], PDU[1]);
+        RegisterCount = TwoByteToWord(PDU[4], PDU[3]);
+        RegisterEndAddress = RegisterStartAddress + (RegisterCount - 1);
+        ByteCount = RegisterCount * 2;
         if (
-          ((StartingAddress > (SIZE_MODBUS_REGISTER - 1)) and (EndingAddress > (SIZE_MODBUS_REGISTER - 1))) or
-          (QuantityOfRegister > (SIZE_MODBUS_REGISTER - 1))
+          ((RegisterStartAddress > (SIZE_MODBUS_REGISTER - 1)) and (RegisterEndAddress > (SIZE_MODBUS_REGISTER - 1))) or //плохой адрес
+          (RegisterCount > 2) // можно читать разом не более 2х регистров
         )
         {
           //Запрошен адресс регистра которого нет.
-          Buffer3[0] = CurrentModbusFunction;
-          Buffer3[1] = ERROR_ILLEGAL_DATA_ADDRESS; //ILLEGAL DATA ADDRESS
-          Counter3 = 1;
+          PDU[0] = ModbusFunctionCode;
+          PDU[1] = ERROR_ILLEGAL_DATA_ADDRESS; //ILLEGAL DATA ADDRESS
+          CntPDU = 1;
           ErrorCounter++;
         }
         else
         {
           //Формирование ответа на запрос.
-          Buffer3[0] = CurrentModbusFunction;
-          Buffer3[1] = (uint8_t)ByteCounter;
-          for (uint16_t i = 1; (i <= ByteCounter); i = i + 2)
+          PDU[0] = ModbusFunctionCode;
+          PDU[1] = (uint8_t)ByteCount;
+          if (RegisterCount == 1) //читаем 1 регистр
           {
-            Buffer3[i + 1] = WordToByteHi(ptr->MW[StartingAddress + ((i - 1) / 2)]);
-            Buffer3[i + 2] = WordToByteLo(ptr->MW[StartingAddress + ((i - 1) / 2)]);
+            uint8_t TmpHi_0 = WordToByteHi(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t TmpLo_0 = WordToByteLo(ptr->MW[RegisterStartAddress + 0]);
+            INTERRUPT_OFF();
+            PDU[2] = TmpHi_0;
+            PDU[3] = TmpLo_0;
+            INTERRUPT_ON();
+            CntPDU = 3;
           }
-          Counter3 = (uint8_t)(ByteCounter + 1);
+          if (RegisterCount == 2) //читаем 2 регистра
+          {
+            uint8_t TmpHi_0 = WordToByteHi(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t TmpLo_0 = WordToByteLo(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t TmpHi_1 = WordToByteHi(ptr->MW[RegisterStartAddress + 1]);
+            uint8_t TmpLo_1 = WordToByteLo(ptr->MW[RegisterStartAddress + 1]);
+            INTERRUPT_OFF();
+            PDU[2] = TmpHi_0;
+            PDU[3] = TmpLo_0;
+            PDU[4] = TmpHi_1;
+            PDU[5] = TmpLo_1;
+            INTERRUPT_ON();
+            CntPDU = 5;
+          }
         }
         State = MODBUS_STATE_PDU_PROCESSING_OK;
         break;
       }
+
     //Функция 16 MODBUS.
     case MODBUS_STATE_FUN_WRITE_MULTIPLE_HOLDING_REGISTERS:
       {
-        StartingAddress = TwoByteToWord(Buffer3[2], Buffer3[1]);
-        QuantityOfRegister = TwoByteToWord(Buffer3[4], Buffer3[3]);
-        EndingAddress = StartingAddress + (QuantityOfRegister - 1);
-        ByteCounter = QuantityOfRegister * 2;
+        RegisterStartAddress = TwoByteToWord(PDU[2], PDU[1]);
+        RegisterCount = TwoByteToWord(PDU[4], PDU[3]);
+        RegisterEndAddress = RegisterStartAddress + (RegisterCount - 1);
+        ByteCount = RegisterCount * 2;
         if (
           (
-            (StartingAddress > (SIZE_MODBUS_REGISTER - 1))
-            and (EndingAddress > (SIZE_MODBUS_REGISTER - 1))
+            (RegisterStartAddress > (SIZE_MODBUS_REGISTER - 1))
+            and (RegisterEndAddress > (SIZE_MODBUS_REGISTER - 1))
           )
-          or (QuantityOfRegister > (SIZE_MODBUS_REGISTER - 1))
-          or (ByteCounter != ((uint16_t)Buffer3[5]))
+          or (RegisterCount > (SIZE_MODBUS_REGISTER - 1))
+          or (ByteCount != ((uint16_t)PDU[5]))
         )
         {
           //Запрошен адресс регистра которого нет.
-          Buffer3[0] = CurrentModbusFunction;
-          Buffer3[1] = ERROR_ILLEGAL_DATA_ADDRESS; //ILLEGAL DATA ADDRESS
-          Counter3 = 1;
+          PDU[0] = ModbusFunctionCode;
+          PDU[1] = ERROR_ILLEGAL_DATA_ADDRESS; //ILLEGAL DATA ADDRESS
+          CntPDU = 1;
           ErrorCounter++;
         }
         else
         {
           //В качестве ответа используем часть запроса.
-          Counter3 = 4;
+          CntPDU = 4;
           //Запись значений в регистры MODBUS.
-          for (uint16_t i = 0; (i < QuantityOfRegister); i = i + 1)
+          for (uint16_t i = 0; (i < RegisterCount); i = i + 1)
           {
-            ptr->MW[StartingAddress + i] =
+            ptr->MW[RegisterStartAddress + i] =
               TwoByteToWord
               (
-                Buffer3[i * 2 + 7], //Младший.
-                Buffer3[i * 2 + 6] //Старший.
+                PDU[i * 2 + 7], //Младший.
+                PDU[i * 2 + 6] //Старший.
               );
           }
         }
@@ -298,10 +322,10 @@ void FbModbusConvertPDUtoASCII(struct Modbus *p)
   if (State == MODBUS_STATE_PDU_PROCESSING_OK)
   {
     Buffer2[0] = SlaveAddress;
-    for (uint16_t i = 0; (i <= Counter3); i = i + 1)
+    for (uint16_t i = 0; (i <= CntPDU); i = i + 1)
     {
       Counter2 = i + 1;
-      Buffer2[Counter2] = Buffer3[i];
+      Buffer2[Counter2] = PDU[i];
     }
     State = MODBUS_STATE_PDU_ADD_ADR;
   }
@@ -367,7 +391,7 @@ void FbModbusTxPacketASCII(struct Modbus *p)
     State = MODBUS_STATE_RESET;
     Counter1 = 0;
     Counter2 = 0;
-    Counter3 = 0;
+    CntPDU = 0;
     Counter4 = 0;
 
   }
@@ -672,6 +696,8 @@ uint16_t int32_to_uint16_register_hi(int32_t In) //MODBUS поддержка int
 //      +------------------------------------------- Start byte ":"
 //PLC: 3A    01    03    02    00    00    FA 0D 0A //Tx message ASCII HEX
 //LCR =  not(01 +  03 +  02 +  00 +  00)+1=FA
+
+/****************************************************************************************/
 
 //WRITE MULTIPLE HOLDING REGISTERS
 //Example MODBUS ASCII request:

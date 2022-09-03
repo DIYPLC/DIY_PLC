@@ -148,11 +148,11 @@ void PLC_Digital_output_cyclic(struct GlobalVar *p)
 {
   if (p->Do0)
   {
-    (PORTB |= (1 << 5)); //LED_ON();
+    //LED_ON();
   }
   else
   {
-    (PORTB &= ~(1 << 5)); //LED_OFF();
+    //LED_OFF();
   }
   return;
 }
