@@ -6,6 +6,8 @@
 //read multiple registers FC 3
 //write multiple registers FC 16 (0x10)
 //Протестированно программой insat.ru MasterOPC Universal Modbus Server
+//Есть непонятные проблемы при записи 16 бит и при операциях с 32бит
+//Получается с 2го пакета только
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -222,6 +224,27 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
     //Функция 3 MODBUS.
     case MODBUS_STATE_FUN_READ_HOLDING_REGISTERS:
       {
+        //READ HOLDING REGISTERS
+        //
+        // |-PDU--------| (PDU = Protocol Data Unit)
+        // 00 01 02 03 04 // Cnt
+        // 03 00 02 00 01 //Rx message HEX
+        //  |  |  |  |  |
+        //  |  |  |  |  +- PDU Register count low byte
+        //  |  |  |  +---- PDU Register count high byte
+        //  |  |  +------- PDU Register start address low byte
+        //  |  +---------- PDU Register start address high byte
+        //  +------------- PDU Modbus function code
+        //
+        // |-PDU-----| (PDU = Protocol Data Unit)
+        // 00 01 02 03 // Cnt
+        // 03 02 00 00 //Tx message HEX
+        //  |  |  |  |
+        //  |  |  |  +---- PDU Register value low byte
+        //  |  |  +------- PDU Register value high byte
+        //  |  +---------- PDU Byte count (after this)
+        //  +------------- PDU Modbus function code
+        //
         RegisterStartAddress = TwoByteToWord(PDU[2], PDU[1]);
         RegisterCount = TwoByteToWord(PDU[4], PDU[3]);
         RegisterEndAddress = RegisterStartAddress + (RegisterCount - 1);
@@ -244,25 +267,25 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
           PDU[1] = (uint8_t)ByteCount;
           if (RegisterCount == 1) //читаем 1 регистр
           {
-            uint8_t TmpHi_0 = WordToByteHi(ptr->MW[RegisterStartAddress + 0]);
-            uint8_t TmpLo_0 = WordToByteLo(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t RegisterValueHi_0 = WordToByteHi(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t RegisterValueLo_0 = WordToByteLo(ptr->MW[RegisterStartAddress + 0]);
             INTERRUPT_OFF();
-            PDU[2] = TmpHi_0;
-            PDU[3] = TmpLo_0;
+            PDU[2] = RegisterValueHi_0;
+            PDU[3] = RegisterValueLo_0;
             INTERRUPT_ON();
             CntPDU = 3;
           }
           if (RegisterCount == 2) //читаем 2 регистра
           {
-            uint8_t TmpHi_0 = WordToByteHi(ptr->MW[RegisterStartAddress + 0]);
-            uint8_t TmpLo_0 = WordToByteLo(ptr->MW[RegisterStartAddress + 0]);
-            uint8_t TmpHi_1 = WordToByteHi(ptr->MW[RegisterStartAddress + 1]);
-            uint8_t TmpLo_1 = WordToByteLo(ptr->MW[RegisterStartAddress + 1]);
+            uint8_t RegisterValueHi_0 = WordToByteHi(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t RegisterValueLo_0 = WordToByteLo(ptr->MW[RegisterStartAddress + 0]);
+            uint8_t RegisterValueHi_1 = WordToByteHi(ptr->MW[RegisterStartAddress + 1]);
+            uint8_t RegisterValueLo_1 = WordToByteLo(ptr->MW[RegisterStartAddress + 1]);
             INTERRUPT_OFF();
-            PDU[2] = TmpHi_0;
-            PDU[3] = TmpLo_0;
-            PDU[4] = TmpHi_1;
-            PDU[5] = TmpLo_1;
+            PDU[2] = RegisterValueHi_0;
+            PDU[3] = RegisterValueLo_0;
+            PDU[4] = RegisterValueHi_1;
+            PDU[5] = RegisterValueLo_1;
             INTERRUPT_ON();
             CntPDU = 5;
           }
@@ -284,7 +307,7 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
             and (RegisterEndAddress > (SIZE_MODBUS_REGISTER - 1))
           )
           or (RegisterCount > 2) // Незя писать больше 2х регистров одновременно.
-          or (ByteCount != ((uint16_t)PDU[5]))
+          or (ByteCount != ((uint16_t)PDU[5])) //Неправильный пакет
         )
         {
           //Запрошен адресс регистра которого нет.
@@ -295,17 +318,23 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
         }
         else
         {
-          //В качестве ответа используем часть запроса.
-          CntPDU = 4;
-          //Запись значений в регистры MODBUS.
-          for (uint16_t i = 0; (i < RegisterCount); i = i + 1)
+          if (RegisterCount == 1) //записываем 1 регистр
           {
-            ptr->MW[RegisterStartAddress + i] =
-              TwoByteToWord
-              (
-                PDU[i * 2 + 7], //Младший.
-                PDU[i * 2 + 6] //Старший.
-              );
+            uint16_t RegisterValue_0 = TwoByteToWord(PDU[7], PDU[6]); //Lo Hi
+            INTERRUPT_OFF();
+            ptr->MW[RegisterStartAddress + 0] = RegisterValue_0;
+            INTERRUPT_ON();
+            CntPDU = 7;
+          }
+          if (RegisterCount == 2) //записываем 2 регистра
+          {
+            uint16_t RegisterValue_0 = TwoByteToWord(PDU[7], PDU[6]); //Lo Hi
+            uint16_t RegisterValue_1 = TwoByteToWord(PDU[9], PDU[8]); //Lo Hi
+            INTERRUPT_OFF();
+            ptr->MW[RegisterStartAddress + 0] = RegisterValue_0;
+            ptr->MW[RegisterStartAddress + 1] = RegisterValue_1;
+            INTERRUPT_ON();
+            CntPDU = 9;
           }
         }
         State = MODBUS_STATE_PDU_PROCESSING_OK;
