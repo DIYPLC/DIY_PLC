@@ -17,20 +17,20 @@
 #define INTERRUPT_ON(); asm volatile ("sei");
 
 #define SlaveAddress p->SlaveAddress
-#define Counter1     p->Counter1
-#define Counter2     p->Counter2
+#define CntADU       p->CntADU
+#define CntADUHEX    p->CntADUHEX
 #define CntPDU       p->CntPDU
 #define Counter4     p->Counter4
 #define State        p->State
 #define UDR          p->UDR
-#define Buffer1      p->Buffer1
-#define Buffer2      p->Buffer2
+#define ADU          p->ADU
+#define ADUHEX       p->ADUHEX
 #define PDU          p->PDU
 #define ErrorCounter p->ErrorCounter
 
-#define SIZE_BUFFER_1 sizeof(Buffer1)
-#define SIZE_BUFFER_2 sizeof(Buffer2)
-#define SIZE_BUFFER_3 sizeof(Buffer3)
+#define SIZE_ADU sizeof(ADU)
+//#define SIZE_ADUHEX sizeof(ADUHEX)
+//#define SIZE_PDU sizeof(PDU)
 
 //MODBUS_FUNCTION_CODES
 #define FUN_READ_HOLDING_REGISTERS           0x03 //3
@@ -64,9 +64,9 @@ void FbModbusRxPacketASCII(struct Modbus *p) //Принимаем ASCII сооб
         //Ожидание байта начала пакета.
         if (UDR == START_BYTE)
         {
-          Buffer1[0] = UDR;
+          ADU[0] = UDR;
           State = MODBUS_STATE_RECEIVING_MESSAGE;
-          Counter1 = 1;
+          CntADU = 1;
         }
         break;
       }
@@ -74,24 +74,24 @@ void FbModbusRxPacketASCII(struct Modbus *p) //Принимаем ASCII сооб
       {
         //Если во время приема сообщения пришел стартовый байт значит что то пошло не так.
         //Если во время приема сообщения произошло переполнение буфера.
-        if ((UDR == START_BYTE) or (Counter1 >= (SIZE_BUFFER_1 - 1)))
+        if ((UDR == START_BYTE) or (CntADU >= (SIZE_ADU - 1)))
         {
           State = MODBUS_STATE_RESET;
           ErrorCounter++;
           //Если во время приема сообщения принят стартовый байт то данная несштатная ситуация отработается правильно.
           if ((UDR == START_BYTE))
           {
-            Buffer1[0] = UDR;
+            ADU[0] = UDR;
             State = MODBUS_STATE_RECEIVING_MESSAGE;
-            Counter1 = 1;
+            CntADU = 1;
           }
         }
         else
         {
           //Если последний принятый байт LF предпоследний CR то сообщение принято.
-          Buffer1[Counter1] = UDR;
-          Counter1 = Counter1 + 1; //Количество байт в принятом сообщении.
-          if ((Buffer1[Counter1] == STOP2_BYTE) and (Buffer1[Counter1 - 1] == STOP1_BYTE))
+          ADU[CntADU] = UDR;
+          CntADU = CntADU + 1; //Количество байт в принятом сообщении.
+          if ((ADU[CntADU] == STOP2_BYTE) and (ADU[CntADU - 1] == STOP1_BYTE))
           {
             State = MODBUS_STATE_MESSAGE_RECEIVED; //Пакет принят.
           }
@@ -112,7 +112,7 @@ void FbModbusConvertASCIItoPDU(struct Modbus *p)
     //В принятом пакете должно быть нечетное количество байт.
     //Следовательно в счетчике должно быть чило четное.
     //Так же количество байт в принятом пакете должно быть не менее 9
-    if (((Counter1 & 0x01) == 0x00) and (Counter1 >= 9))
+    if (((CntADU & 0x01) == 0x00) and (CntADU >= 9))
     {
 
       State = MODBUS_STATE_MESSAGE_VERIFIED; //Принятое сообщение проверенно на корректность.
@@ -127,10 +127,10 @@ void FbModbusConvertASCIItoPDU(struct Modbus *p)
   if (State == MODBUS_STATE_MESSAGE_VERIFIED) //Принятое сообщение проверенно на корректность.
   {
     //Преобразование ASCII пакета в пакет HEX.
-    for (unsigned int i = 1; (i <= (Counter1 - 3)); i = i + 2)
+    for (unsigned int i = 1; (i <= (CntADU - 3)); i = i + 2)
     {
-      Counter2 = (i - 1) / 2;
-      Buffer2[Counter2] = TwoASCIItoByte(Buffer1[i + 1], Buffer1[i]);
+      CntADUHEX = (i - 1) / 2;
+      ADUHEX[CntADUHEX] = TwoASCIItoByte(ADU[i + 1], ADU[i]);
     }
     State = MODBUS_STATE_CONVERT_ASII_TO_HEX; //Принятое сообщение преобразованно из формата ASCII в HEX.
   }
@@ -139,12 +139,12 @@ void FbModbusConvertASCIItoPDU(struct Modbus *p)
   {
     //Рассчет и проверка контрольной суммы LRC.
     uint16_t TmpSum = 0;
-    for (uint16_t i = 0; (i <= (Counter2 - 1)); i = i + 1)
+    for (uint16_t i = 0; (i <= (CntADUHEX - 1)); i = i + 1)
     {
-      TmpSum = (0xFF & (TmpSum +  (uint16_t)Buffer2[i]));
+      TmpSum = (0xFF & (TmpSum +  (uint16_t)ADUHEX[i]));
     }
     uint8_t LCR = (uint8_t)(((~ TmpSum) + 1) & 0xFF);
-    if (LCR == Buffer2[Counter2])
+    if (LCR == ADUHEX[CntADUHEX])
     {
       State = MODBUS_STATE_LCR_VERIFIED; //Контрольная сумма верная.
     }
@@ -158,7 +158,7 @@ void FbModbusConvertASCIItoPDU(struct Modbus *p)
   //Проверка адреса MODBUS.
   if (State == MODBUS_STATE_LCR_VERIFIED) //Контрольная сумма в принятом сообщении корректная.
   {
-    if (SlaveAddress == Buffer2[0])
+    if (SlaveAddress == ADUHEX[0])
     {
       State = MODBUS_STATE_ADR_VERIFIED; //Адресс сходится.
     }
@@ -170,10 +170,10 @@ void FbModbusConvertASCIItoPDU(struct Modbus *p)
   //Достаем из буфера 2 PDU.
   if (State == MODBUS_STATE_ADR_VERIFIED)
   {
-    for (uint16_t i = 1; (i <= (Counter2 - 1)); i = i + 1)
+    for (uint16_t i = 1; (i <= (CntADUHEX - 1)); i = i + 1)
     {
       CntPDU = i - 1;
-      PDU[CntPDU] = Buffer2[i];
+      PDU[CntPDU] = ADUHEX[i];
     }
     State = MODBUS_STATE_READ_PDU;
   }
@@ -278,12 +278,12 @@ void FbModbusProcessingPDU(struct Modbus *p, struct GlobalVar *ptr)
         RegisterCount = TwoByteToWord(PDU[4], PDU[3]);
         RegisterEndAddress = RegisterStartAddress + (RegisterCount - 1);
         ByteCount = RegisterCount * 2;
-        if (
+        if ( //Если что то пошло не так.
           (
             (RegisterStartAddress > (SIZE_MODBUS_REGISTER - 1))
             and (RegisterEndAddress > (SIZE_MODBUS_REGISTER - 1))
           )
-          or (RegisterCount > (SIZE_MODBUS_REGISTER - 1))
+          or (RegisterCount > 2) // Незя писать больше 2х регистров одновременно.
           or (ByteCount != ((uint16_t)PDU[5]))
         )
         {
@@ -321,11 +321,11 @@ void FbModbusConvertPDUtoASCII(struct Modbus *p)
   //Добавляем к PDU адресс MODBUS.
   if (State == MODBUS_STATE_PDU_PROCESSING_OK)
   {
-    Buffer2[0] = SlaveAddress;
+    ADUHEX[0] = SlaveAddress;
     for (uint16_t i = 0; (i <= CntPDU); i = i + 1)
     {
-      Counter2 = i + 1;
-      Buffer2[Counter2] = PDU[i];
+      CntADUHEX = i + 1;
+      ADUHEX[CntADUHEX] = PDU[i];
     }
     State = MODBUS_STATE_PDU_ADD_ADR;
   }
@@ -334,13 +334,13 @@ void FbModbusConvertPDUtoASCII(struct Modbus *p)
   if (State == MODBUS_STATE_PDU_ADD_ADR)
   {
     uint16_t TmpSum = 0;
-    for (uint16_t i = 0; (i <= Counter2); i = i + 1)
+    for (uint16_t i = 0; (i <= CntADUHEX); i = i + 1)
     {
-      TmpSum = (0xFF & (TmpSum +  (uint16_t)Buffer2[i]));
+      TmpSum = (0xFF & (TmpSum +  (uint16_t)ADUHEX[i]));
     }
     uint8_t LCR = (uint8_t)(((~ TmpSum) + 1) & 0xFF);
-    Counter2 = Counter2 + 1;
-    Buffer2[Counter2] = LCR;
+    CntADUHEX = CntADUHEX + 1;
+    ADUHEX[CntADUHEX] = LCR;
     State = MODBUS_STATE_PDU_ADD_LCR;
   }
 
@@ -348,25 +348,25 @@ void FbModbusConvertPDUtoASCII(struct Modbus *p)
   if (State == MODBUS_STATE_PDU_ADD_LCR)
   {
     //Добавляем символ начала пакета.
-    Buffer1[0] = START_BYTE;
-    for (uint16_t i = 0; (i <= Counter2); i = i + 1)
+    ADU[0] = START_BYTE;
+    for (uint16_t i = 0; (i <= CntADUHEX); i = i + 1)
     {
-      Counter1 = ((i * 2) + 1);
-      Buffer1[Counter1] = Hi4BitInByteToASCII(Buffer2[i]);
-      Buffer1[Counter1 + 1] = Lo4BitInByteToASCII(Buffer2[i]);
+      CntADU = ((i * 2) + 1);
+      ADU[CntADU] = Hi4BitInByteToASCII(ADUHEX[i]);
+      ADU[CntADU + 1] = Lo4BitInByteToASCII(ADUHEX[i]);
     }
     //Добавляем символы конца пакета.
-    Counter1 = Counter1 + 2;
-    Buffer1[Counter1] = STOP1_BYTE; //cr
-    Counter1 = Counter1 + 1;
-    Buffer1[Counter1] = STOP2_BYTE; //lf
-    Counter1 = Counter1 + 1; // ЧТО ЗА ХЕРНЯ !!!!!!!!!
+    CntADU = CntADU + 2;
+    ADU[CntADU] = STOP1_BYTE; //cr
+    CntADU = CntADU + 1;
+    ADU[CntADU] = STOP2_BYTE; //lf
+    CntADU = CntADU + 1; // ЧТО ЗА ХЕРНЯ !!!!!!!!!
     State = MODBUS_STATE_PDU_ADD_START_STOP_BYTES;
   }
   //Передаем первый байт ответного пакета, осталные передадуться по прерыванию.
   if (State == MODBUS_STATE_PDU_ADD_START_STOP_BYTES)
   {
-    UDR = Buffer1[0];
+    UDR = ADU[0];
     State = MODBUS_STATE_TX_START;
   }
 }
@@ -379,8 +379,8 @@ void FbModbusTxPacketASCII(struct Modbus *p)
   if (State == MODBUS_STATE_TX_START)
   {
     Counter4 = Counter4 + 1;
-    UDR = Buffer1[Counter4];
-    if (Counter4 >= Counter1)
+    UDR = ADU[Counter4];
+    if (Counter4 >= CntADU)
     {
       State = MODBUS_STATE_TX_STOP;
     }
@@ -389,8 +389,8 @@ void FbModbusTxPacketASCII(struct Modbus *p)
   if (State == MODBUS_STATE_TX_STOP)
   {
     State = MODBUS_STATE_RESET;
-    Counter1 = 0;
-    Counter2 = 0;
+    CntADU = 0;
+    CntADUHEX = 0;
     CntPDU = 0;
     Counter4 = 0;
 
@@ -660,7 +660,7 @@ uint16_t int32_to_uint16_register_hi(int32_t In) //MODBUS поддержка int
 //     |-ADU--------------------------------------------| (ADU = Application Data Unit)
 //                 |-PDU--------------------|             (PDU = Protocol Data Unit)
 //HMI: 3A 30 31 30 33 30 30 30 32 30 30 30 31 46 39 0D 0A //Rx message ASCII HEX
-//CNT  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17
+//CNT  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16
 //HMI:  :  0  1  0  3  0  0  0  2  0  0  0  1  F  9 CR LF //Rx message string
 //HMI: 3A    01    03    00    02    00    01    F9 0D 0A //Rx message HEX
 //      |     |     |     |     |     |     |     |  |  |
@@ -681,7 +681,7 @@ uint16_t int32_to_uint16_register_hi(int32_t In) //MODBUS поддержка int
 //     |-ADU--------------------------------------| (ADU = Application Data Unit)
 //                 |-PDU--------------|             (PDU = Protocol Data Unit)
 //PLC: 3A 30 31 30 33 30 32 30 30 30 30 46 41 0D 0A //Tx message ASCII HEX
-//CNT  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
+//CNT  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14
 //PLC:  :  0  1  0  3  0  2  0  0  0  0  F  A CR LF //Tx message ASCII string
 //PLC: 3A    01    03    02    00    00    FA 0D 0A //Tx message ASCII HEX
 //      |     |     |     |     |     |     |  |  |
@@ -704,7 +704,7 @@ uint16_t int32_to_uint16_register_hi(int32_t In) //MODBUS поддержка int
 //     |-ADU--------------------------------------------------------------| (ADU = Application Data Unit)
 //                 |-PDU--------------------------------------|             (PDU = Protocol Data Unit)
 //HMI: 3A 30 31 31 30 30 30 30 32 30 30 30 31 30 32 30 30 30 37 45 33 0D 0A //Rx message ASCII HEX
-//CNT  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+//CNT  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
 //HMI:  :  0  1  1  0  0  0  0  2  0  0  0  1  0  2  0  0  0  7  E  3 CR LF
 //HMI: 3A    01    10    00    02    00    01    02    00    07    E3 0D 0A //Rx message HEX
 //      |     |     |     |     |     |     |     |     |     |     |  |  |
@@ -728,7 +728,7 @@ uint16_t int32_to_uint16_register_hi(int32_t In) //MODBUS поддержка int
 //     |-ADU--------------------------------------------| (ADU = Application Data Unit)
 //                 |-PDU--------------------|             (PDU = Protocol Data Unit)
 //HMI: 3A 30 31 31 30 30 30 30 32 30 30 30 31 45 43 0D 0A //Rx message ASCII HEX
-//CNT  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17
+//CNT  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16
 //HMI:  :  0  1  1  0  0  0  0  2  0  0  0  1  E  C CR LF
 //HMI: 3A    01    10    00    02    00    01    EC 0D 0A //Rx message HEX
 //      |     |     |     |     |     |     |     |  |  |
