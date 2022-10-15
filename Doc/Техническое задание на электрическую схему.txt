@@ -18,18 +18,25 @@
 Точность резисторов 1%
 
 Для дискретных входов использовать:
+TLP2362
 ISO1211
 TLP504A
 АОТ101АС
+6N137
+H11L1M
 
 Для дискретных выходов использовать:
 PVG612SPBF
 РКП1А
 
+Сеть RS485:
+ADM2486BRWZ
+
 Микроконтроллеры:
 Arduino pro mini (Atmega328p)
 Blue pill (STM32F103C8T6)
-Black pill (STM32F411CEU6) <- оптимальный выбор.
+Black pill (STM32F401CCU6)
+Black pill (STM32F411CEU6)
 ESP32
 Raspberry pi zero
 
