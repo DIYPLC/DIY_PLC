@@ -91,3 +91,6 @@ void FbScale(struct DbScale *p)
 // Author: VA
 // Contacts: DIY.PLC.314@gmail.com
 // License: GNU GPL v2
+//
+// https://www.youtube.com/@DIY_PLC
+// https://github.com/DIYPLC

@@ -57,3 +57,6 @@ void FcTask100ms(bool Reset, uint32_t Ts_ms) //Задача выполняетс
 // Author: VA
 // Contacts: DIY.PLC.314@gmail.com
 // License: GNU GPL v2
+//
+// https://www.youtube.com/@DIY_PLC
+// https://github.com/DIYPLC

@@ -354,3 +354,6 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
 // Author: VA
 // Contacts: DIY.PLC.314@gmail.com
 // License: GNU GPL v2
+//
+// https://www.youtube.com/@DIY_PLC
+// https://github.com/DIYPLC

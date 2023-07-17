@@ -55,3 +55,6 @@ uint32_t Calc_Ts_ms_max(uint32_t Ts_ms) //Максимальное время с
 // Author: VA
 // Contacts: DIY.PLC.314@gmail.com
 // License: GNU GPL v2
+//
+// https://www.youtube.com/@DIY_PLC
+// https://github.com/DIYPLC

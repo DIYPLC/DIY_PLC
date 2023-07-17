@@ -792,3 +792,6 @@ uint16_t int32_to_uint16_register_hi(int32_t In) //MODBUS поддержка int
 // Author: VA
 // Contacts: DIY.PLC.314@gmail.com
 // License: GNU GPL v2
+//
+// https://www.youtube.com/@DIY_PLC
+// https://github.com/DIYPLC
