@@ -4,15 +4,15 @@
 #include "FbDeadBand.h"
 
 #define In    p->In
-#define DBmax p->DBmax
-#define DBmin p->DBmin
+#define ERMAX p->ERMAX
+#define ERMIN p->ERMIN
 #define Out   p->Out
 
 void FbDeadBand(struct DbDeadBand *p)
 {
 
   //Зона нечувствительности.
-  if ((DBmin < In) and (In < DBmax))
+  if ((ERMIN < In) and (In < ERMAX))
   {
     Out = 0.0;
   }
@@ -26,7 +26,7 @@ void FbDeadBand(struct DbDeadBand *p)
 
 // Условное графическое обозначение.
 //
-//          DBmax
+//          ERMAX
 //      +-----------+
 //      |           |
 //      |       /   |
@@ -38,7 +38,7 @@ void FbDeadBand(struct DbDeadBand *p)
 //      | /         |
 //      |           |
 //      +-----------+
-//          DBmin
+//          ERMIN
 
 // Статическая характеристика.
 //
@@ -49,13 +49,13 @@ void FbDeadBand(struct DbDeadBand *p)
 //                  |     *
 //                  |     *
 //                  |     *
-//             DBmin|     *
+//             ERMIN|     *
 //            |<--->|     *
 //            |     |     *
 // -In <------*************--> +In
 //            *     |     |
 //            *     |<--->|
-//            *     |DBmax
+//            *     |ERMAX
 //            *     |
 //            *     |
 //            *     |
@@ -71,11 +71,11 @@ void FbDeadBand(struct DbDeadBand *p)
 // |           * *
 // |----------*---* -----------------
 // |         *     *               |
-// |        *       *              | DBMax
+// |        *       *              | ERMAX
 // |       *         *             |
 // +------*-----------*----------------------> t[s]
 // |     *             *           |
-// |    *               *          | DBMin
+// |    *               *          | ERMIN
 // |   *                 *         |
 // |--*-------------------*----------
 // | *                     *
@@ -87,11 +87,11 @@ void FbDeadBand(struct DbDeadBand *p)
 // |           * *
 // |----------*---* -----------------
 // |          *   *                |
-// |          *   *                | DBMax
+// |          *   *                | ERMAX
 // |          *   *                |
 // +--*********---*********------------------> t[s]
 // |  *                   *        |
-// |  *                   *        | DBMin
+// |  *                   *        | ERMIN
 // |  *                   *        |
 // |--*-------------------*----------
 // | *                     *

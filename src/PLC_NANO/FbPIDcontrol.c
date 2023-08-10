@@ -9,8 +9,8 @@
 #define Ki              p->Ki
 #define Kd              p->Kd
 #define Kdf             p->Kdf
-#define DBmax           p->DBmax
-#define DBmin           p->DBmin
+#define ERMAX           p->ERMAX
+#define ERMIN           p->ERMIN
 #define OutMax          p->OutMax
 #define OutMin          p->OutMin
 #define Ts              p->Ts
@@ -34,7 +34,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
   Er = Setpoint - ProcessVariable;
 
   //Зона нечувствительности к ошибке.
-  if ((DBmin < Er) and (Er < DBmax))
+  if ((ERMIN < Er) and (Er < ERMAX))
   {
     Er = 0.0;
   }
@@ -134,8 +134,8 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // PV          - Process Variable     - Измеренное значение.
 // CS          - Control Signal       - Сигнал управления == Out.
 // Er          - Error                - Ошибка регулирования, рассогласование.
-// DBmax       - Dead band maximum    - Максимум зоны нечувствительности.
-// DBmin       - Dead band minimum    - Минимум зоны нечувствительности.
+// ERMAX       - Erorr maximum        - Максимум зоны нечувствительности.
+// ERMIN       - Erorr minimum        - Минимум зоны нечувствительности.
 // OutMax      - Output maximum       - Максимум сигнала управления.
 // OutMin      - Output minimum       - Минимум сигнала управления.
 // Ts          - Sample Time          - Шаг дискретизации по времени.
@@ -189,7 +189,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 //                   +---+
 //
 // Зона нечувствительности к ошибке.
-//          DBmax
+//          ERMAX
 //      +-----------+
 //      |           |
 //      |       /   |
@@ -201,7 +201,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 //      | /         |
 //      |           |
 //      +-----------+
-//          DBmin
+//          ERMIN
 //
 // Пропорциональная составляющая.
 //      +---+
@@ -393,10 +393,10 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // | | 1.000 | | Kdf                             | |
 // | +-------+ +---------------------------------+ |
 // | +-------+ +---------------------------------+ |
-// | | 0.001 | | DBmax                           | |
+// | | 0.001 | | ERMAX                           | |
 // | +-------+ +---------------------------------+ |
 // | +-------+ +---------------------------------+ |
-// | |-0.001 | | DBmin                           | |
+// | |-0.001 | | ERMIN                           | |
 // | +-------+ +---------------------------------+ |
 // | +-------+ +---------------------------------+ |
 // | | 100.0 | | OutMax                          | |
