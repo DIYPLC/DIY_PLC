@@ -1,6 +1,5 @@
 //Программирование в стиле ПЛК версия от 24.07.2022.
 //Библиотека LibPlc.
-//В файле FcTaskCyclic1.c Пример ПИД- регулятора давления.
 //В файле FcTask100ms.c Пример мигания светодиодом.
 //В файле MODBUS.c Сеть MODBUS ASCII SALVE ADR1 RS485 для SCADA/HMI.
 //Ресурсы ПЛК в GlobalVar.h
@@ -18,17 +17,6 @@
 
 struct Modbus Modbus0 = {0}; //Сеть MODBUS ASCII SALVE.
 struct GlobalVar GV = {0}; //Глобальные переменные ПЛК.
-
-// Дерево вызовов.
-//
-// int main(void); //PLC_NANO.ino or main.cpp
-//   while (1)
-//     |
-//     +-void FcTaskCyclic1(bool Reset, uint32_t Ts_ms); //FcTaskCyclic1.c
-//       |
-//       +-void Fb1PIRCA1(struct Db1PIRCA1 *p); //Fb1PIRCA1.c
-//         |
-//         +-void FbPIDcontrol(struct DbPIDcontrol *p); //FbPIDcontrol.c
 
 int main(void)
 {
@@ -55,13 +43,6 @@ int main(void)
     //HMI <-- MW[ 3] <-- PLC (uint32) Ts_ms_max
     //HMI <-- MW[ 4] <-- PLC (uint32) Ts_ms_max
     //HMI <-- MW[ 5] <-- PLC (uint16) ErrorCounter
-    //HMI --> MW[ 6] --> PLC (uint16) HmiSP
-    //HMI --> MW[ 7] --> PLC (uint16) HmiControlSignalManual
-    //HMI --> MW[ 8] --> PLC (uint16) HmiControlWord
-    //HMI <-- MW[ 9] <-- PLC (uint16) HmiPV
-    //HMI <-- MW[10] <-- PLC (uint16) HmiControlSignal
-    //HMI <-- MW[11] <-- PLC (uint16) HmiStatusWord
-    //HMI <-- MW[12] <-- PLC (uint16) HmiErrorWord
     GV.MW[0] = uint32_to_uint16_register_lo(GV.Uptime_ms);
     GV.MW[1] = uint32_to_uint16_register_hi(GV.Uptime_ms);
     GV.MW[2] = (uint16_t)GV.Ts_ms;
