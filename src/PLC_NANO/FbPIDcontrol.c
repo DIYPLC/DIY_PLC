@@ -3,20 +3,20 @@
 #include <iso646.h>
 #include "FbPIDcontrol.h"
 
-#define ProcessVariable p->ProcessVariable
-#define Setpoint        p->Setpoint
+#define PV              p->PV
+#define SP              p->SP
 #define Kp              p->Kp
 #define Ki              p->Ki
 #define Kd              p->Kd
 #define Kdf             p->Kdf
 #define ERMAX           p->ERMAX
 #define ERMIN           p->ERMIN
-#define OutMax          p->OutMax
-#define OutMin          p->OutMin
+#define MVMAX           p->MVMAX
+#define MVMIN           p->MVMIN
 #define Ts              p->Ts
 #define Manual          p->Manual
-#define ManOn           p->ManOn
-#define Out             p->Out
+#define OnMan           p->OnMan
+#define MV              p->MV
 #define Er              p->Er
 #define Ppart           p->Ppart
 #define Ipart           p->Ipart
@@ -31,7 +31,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
   float Sw  ; //Выход с переключателя режимов работы.
 
   //Ошибка регулирования.
-  Er = Setpoint - ProcessVariable;
+  Er = SP - PV;
 
   //Зона нечувствительности к ошибке.
   if ((ERMIN < Er) and (Er < ERMAX))
@@ -68,7 +68,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
   Auto = Ppart + Ipart + Dpart;
 
   //Переключение режима работы "Ручной / Автоматический".
-  if (ManOn)
+  if (OnMan)
   {
     Sw = Manual;
   }
@@ -78,29 +78,29 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
   }
 
   //Амплитудный ограничитель- максимум.
-  if (Sw >= OutMax)
+  if (Sw >= MVMAX)
   {
-    Out = OutMax;
+    MV = MVMAX;
     //Ограничение интегральной составляющей методом обратного вычисления.
-    Ipart = Out - (Ppart + Dpart);
+    Ipart = MV - (Ppart + Dpart);
   }
 
   //Амплитудный ограничитель- минимум.
-  if (Sw <= OutMin)
+  if (Sw <= MVMIN)
   {
-    Out = OutMin;
+    MV = MVMIN;
     //Ограничение интегральной составляющей методом обратного вычисления.
-    Ipart = Out - (Ppart + Dpart);
+    Ipart = MV - (Ppart + Dpart);
   }
 
   //Амплитудный ограничитель- без ограничений.
-  if ((OutMin < Sw) and (Sw < OutMax))
+  if ((MVMIN < Sw) and (Sw < MVMAX))
   {
-    Out = Sw;
-    if (ManOn)
+    MV = Sw;
+    if (OnMan)
     {
       //Ограничение интегральной составляющей методом обратного вычисления.
-      Ipart = Out - (Ppart + Dpart);
+      Ipart = MV - (Ppart + Dpart);
     }
   }
 
@@ -109,11 +109,11 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 
 // Передаточная функция регулятора (при Ts -> 0):
 //
-//         Out(s)               1              s
+//          MV(s)               1              s
 // W(s) = -------- = Kp + Ki * --- + Kd * -------------
-//          Er(s)               s          Tdf * s + 1
+//          ER(s)               s          Tdf * s + 1
 //
-// Er(s) = Setpoint(s) - ProcessVariable(s).
+// ER(s) = SP(s) - PV(s).
 // Tdf = 1 / Kdf
 
 // Передаточная функция интегратора:
@@ -130,17 +130,26 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // Fb          - Function block       - Функциональный блок.
 // Db          - Data block           - Блок данных.
 // PIDcontrol  - PID Controller       - ПИД- регулятор (пропорционально интегрально дифференциальный регулятор).
-// SP          - Setpoint             - Заданное значение.
+// SP          - Set Point            - Заданное значение.
 // PV          - Process Variable     - Измеренное значение.
-// CS          - Control Signal       - Сигнал управления == Out.
-// Er          - Error                - Ошибка регулирования, рассогласование.
+// MV          - Manipulated Variable - Сигнал управления.
+// ER          - Error                - Ошибка регулирования, рассогласование.
 // ERMAX       - Erorr maximum        - Максимум зоны нечувствительности.
 // ERMIN       - Erorr minimum        - Минимум зоны нечувствительности.
-// OutMax      - Output maximum       - Максимум сигнала управления.
-// OutMin      - Output minimum       - Минимум сигнала управления.
+// MVMAX       - MV maximum           - Максимум сигнала управления.
+// MVMIN       - MV minimum           - Минимум сигнала управления.
 // Ts          - Sample Time          - Шаг дискретизации по времени.
 // ManOn       - Manual on            - Включить ручной режим управления.
 // Sw          - Switch               - Переключатель.
+// CW          - Control Word         - Слово (ui16 бит) управления (по битам).
+// SW          - Status Word          - Слово (ui16 бит) состояния (по битам).
+// EW          - Error Word           - Слово (ui16 бит) ошибок (по битам).
+// Альтернативные варианты имен.
+// CV          - Control Variable     - Измеренное значение.
+// PV          - Process Value        - Измеренное значение.
+// CS          - Control Signal       - Сигнал управления.
+// MV          - Manipulated Value    - Сигнал управления.
+// OP          - Output Power         - Сигнал управления.
 
 // Характеристики ПИД- регулятора.
 //
@@ -160,7 +169,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 
 // Известные недостатки ПИД- регулятора.
 //
-// При переходе из автоматического режима в ручной безударный переход отсутствует, если не подвязать через внешний тег переменную выхода Out к входу MANUAL.
+// При переходе из автоматического режима в ручной безударный переход отсутствует, если не подвязать через внешний тег переменную выхода MV к входу MANUAL.
 // Безударный переход работает только если Ki не равен нолю.
 // Необходимо следить, чтобы верхняя граница зоны нечувствительности была больше или равна нижней.
 // Необходимо следить, чтобы верхняя граница амплитудного ограничителя была больше нижней.
@@ -175,18 +184,18 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // Сигналы SP и PV нужно ограничивать вне регулятора,
 // диаппазоны ограничения для SP и PV должны быть одинаковыми,
 // если этого не сделать то будут проблемы в автоматическом режиме работы при активной работе амплитудного ограничителя,
-// например SP=90% PV=110% ожидаем Out=0%, но при изменении PV возрастает Out хотя должно быть Out=0%.
+// например SP=90% PV=110% ожидаем MV=0%, но при изменении PV возрастает MV хотя должно быть MV=0%.
 
 //Структура регулятора:
 //
 // Ошибка регулирования.
-//                   +---+
-//                   |   |
-//        Setpoint->-|+  |
-//                   |   |->-Er
-// ProcessVariable->-|-  |
-//                   |   |
-//                   +---+
+//      +---+
+//      |   |
+// SP->-|+  |
+//      |   |->-ER
+// PV->-|-  |
+//      |   |
+//      +---+
 //
 // Зона нечувствительности к ошибке.
 //          ERMAX
@@ -195,7 +204,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 //      |       /   |
 //      |      /    |
 //      |      |    |
-// Er->-|   +--+    |->-Er
+// ER->-|   +--+    |->-ER
 //      |   |       |
 //      |  /        |
 //      | /         |
@@ -206,7 +215,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // Пропорциональная составляющая.
 //      +---+
 //      |   |
-// Er->-|   |
+// ER->-|   |
 //      | * |->-Ppart
 // Kp->-|   |
 //      |   |
@@ -215,7 +224,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // Интегральная составляющая.
 //      +---+   +----------+
 //      |   |   |          |
-// Er->-|   |   |  Z * Ts  |
+// ER->-|   |   |  Z * Ts  |
 //      | * |->-| -------- |->-Ipart
 // Kp->-|   |   |  Z - 1   |
 //      |   |   |          |
@@ -226,7 +235,7 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 //                        |   |
 //      +---+       Kdf->-|   |
 //      |   |     +---+   |   |
-// Er->-|   |     |   |   | * |----------------+-->-Dpart
+// ER->-|   |     |   |   | * |----------------+-->-Dpart
 //      | * |--->-|+  |   |   |                |
 // Kd->-|   |     |   |->-|   |                |
 //      |   | +->-|-  |   |   | +----------+   |
@@ -259,58 +268,58 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 //          |     |
 //          +-----+
 //             |
-// ManOn-->----+
+// OnMan-->----+
 //
 // Амплитудный ограничитель.
-//         OutMax
+//          MVMAX
 //      +-----------+
 //      |           |
 //      |       +-- |
 //      |      /    |
-// Sw->-|     /     |->-Out
+// Sw->-|     /     |->-MV
 //      |    /      |
 //      | --+       |
 //      |           |
 //      +-----------+
-//         OutMin
+//          MVMIN
 
 
 // Реакция разомкнутого контура регулятора на единичное спупечатое воздействие по каналу управления.
 //
-// ^ Er
+// ^ ER
 // |
-// 1************ Er(t) = 1
-// |
+// 1************ ER(t) = 1
+// |            
 // 0---1---2---3---> t[s]
 //
 // ^ Ppart
 // |
-// |************ Ppart(t) = Kp * Er
-// |
-// |
-// |
+// |************ Ppart(t) = Kp * ER
+// |            
+// |            
+// |            
 // 0---1---2---3---> t[s]
 //
 // ^ Ipart
 // |
 // 3           * Ipart(t) = Ki * t
-// |         *
-// 2       *
-// |     *
-// 1   *
-// | *
+// |         *  
+// 2       *    
+// |     *      
+// 1   *        
+// | *          
 // 0---1---2---3---> t[s]
 //
 // ^ Dpart
 // |
 // 1*            Dpart(t) = Kd * (0 - exp(-(t/Tf)))
-// | *
-// |  *
-// |    *
-// |      *
+// | *          
+// |  *        
+// |    *       
+// |      *     
 // 0---------***---> t[s]
 //
-// ^ Out
+// ^ MV
 // |
 // |                               *
 // |                             *
@@ -399,14 +408,14 @@ void FbPIDcontrol(struct DbPIDcontrol *p)
 // | |-0.001 | | ERMIN                           | |
 // | +-------+ +---------------------------------+ |
 // | +-------+ +---------------------------------+ |
-// | | 100.0 | | OutMax                          | |
+// | | 100.0 | | MVMAX                           | |
 // | +-------+ +---------------------------------+ |
 // | +-------+ +---------------------------------+ |
-// | |   0.0 | | OutMin                          | |
+// | |   0.0 | | MVMIN                           | |
 // | +-------+ +---------------------------------+ |
 // +-----------------------------------------------+
 
-// Пересчет коэффициентов регулятора "CONT_C"
+// Пересчет коэффициентов регулятора "CONT_C" 
 // в коэффициенты ПИД- регулятора MATLAB SIMULINK PID Controller.
 //
 // Передаточная функция регулятора SIMATIC FB 41 "CONT_C":

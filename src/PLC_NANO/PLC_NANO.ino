@@ -55,10 +55,10 @@ int main(void)
     //HMI <-- MW[ 3] <-- PLC (uint32) Ts_ms_max
     //HMI <-- MW[ 4] <-- PLC (uint32) Ts_ms_max
     //HMI <-- MW[ 5] <-- PLC (uint16) ErrorCounter
-    //HMI --> MW[ 6] --> PLC (uint16) HmiSetpoint
+    //HMI --> MW[ 6] --> PLC (uint16) HmiSP
     //HMI --> MW[ 7] --> PLC (uint16) HmiControlSignalManual
     //HMI --> MW[ 8] --> PLC (uint16) HmiControlWord
-    //HMI <-- MW[ 9] <-- PLC (uint16) HmiProcessVariable
+    //HMI <-- MW[ 9] <-- PLC (uint16) HmiPV
     //HMI <-- MW[10] <-- PLC (uint16) HmiControlSignal
     //HMI <-- MW[11] <-- PLC (uint16) HmiStatusWord
     //HMI <-- MW[12] <-- PLC (uint16) HmiErrorWord

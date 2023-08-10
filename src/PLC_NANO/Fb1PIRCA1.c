@@ -13,12 +13,12 @@
 
 #define AiSensorPressure       p->AiSensorPressure
 #define DiDriveReady           p->DiDriveReady
-#define HmiSetpoint            p->HmiSetpoint
+#define HmiSP                  p->HmiSP
 #define HmiControlSignalManual p->HmiControlSignalManual
 #define HmiControlWord         p->HmiControlWord
 #define AoDriveFrequency       p->AoDriveFrequency
 #define DoDriveStart           p->DoDriveStart
-#define HmiProcessVariable     p->HmiProcessVariable
+#define HmiPV                  p->HmiPV
 #define HmiControlSignal       p->HmiControlSignal
 #define HmiStatusWord          p->HmiStatusWord
 #define HmiErrorWord           p->HmiErrorWord
@@ -26,10 +26,10 @@
 void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давления.
 {
   //Внутренние переменные, не сохраняемые.
-  float Ts; //Шаг дискретизации по времени [с].
-  bool  Reset; //Сброс при перезагрузке.
-  float ProcessVariable    ; //
-  float Setpoint           ; //
+  float Ts                 ; //Шаг дискретизации по времени [с].
+  bool  Reset              ; //Сброс при перезагрузке.
+  float PV                 ; //
+  float SP                 ; //
   float ControlSignal      ; //
   float ControlSignalManual; //
   bool  HmiButtonStop  ; //
@@ -38,8 +38,8 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   bool  HmiModeStop    ; //
   bool  HmiModeManual  ; //
   bool  HmiModeAuto    ; //
-  bool  ErrorProcessVariableLo; //
-  bool  ErrorProcessVariableHi; //
+  bool  ErrorPVLo; //
+  bool  ErrorPVHi; //
   bool  ErrorControlSignalLo  ; //
   bool  ErrorControlSignalHi  ; //
   bool  ErrorDrive            ; //
@@ -161,10 +161,10 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   DbLimit_PV.OutMax = 10.0            ; //Максимальное значение выхода.
   DbLimit_PV.OutMin = 0.0             ; //Минимальное значение выхода.
   FbLimit(&DbLimit_PV)                ; //Амплитудный ограничитель.
-  ProcessVariable   = DbLimit_PV.Out  ; //Выход амплитудного ограничителя.
+  PV                = DbLimit_PV.Out  ; //Выход амплитудного ограничителя.
 
   //Индикация в HMI 0...1000 (0...10[Бар]).
-  HmiProcessVariable = (uint16_t)(ProcessVariable * 100.0);
+  HmiPV = (uint16_t)(PV * 100.0);
 
   //Ограничение заданного значения давления 0...10[Бар].
   //       DbLimit
@@ -175,11 +175,11 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   //   -|OutMin     |
   //    +-----------+
   static struct DbLimit DbLimit_SP = {0};
-  DbLimit_SP.In     = ((float)HmiSetpoint) / 100.0; //Вход амплитудного ограничителя.
-  DbLimit_SP.OutMax = 10.0                        ; //Максимальное значение выхода.
-  DbLimit_SP.OutMin = 0.0                         ; //Минимальное значение выхода.
-  FbLimit(&DbLimit_SP)                            ; //Амплитудный ограничитель.
-  Setpoint          = DbLimit_SP.Out              ; //Выход амплитудного ограничителя.
+  DbLimit_SP.In     = ((float)HmiSP) / 100.0; //Вход амплитудного ограничителя.
+  DbLimit_SP.OutMax = 10.0                  ; //Максимальное значение выхода.
+  DbLimit_SP.OutMin = 0.0                   ; //Минимальное значение выхода.
+  FbLimit(&DbLimit_SP)                      ; //Амплитудный ограничитель.
+  SP                = DbLimit_SP.Out        ; //Выход амплитудного ограничителя.
 
   //Управление в ручном режиме от HMI 0...5000 (0...50[Гц])
   ControlSignalManual = ((float)HmiControlSignalManual) * 100.0;
@@ -188,34 +188,34 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   //                          DbPIDcontrol
   //                     +--------------------+
   //                     |    FbPIDcontrol    |
-  //   ProcessVariable->-|ProcessVariable  Out|->-ControlSignal
-  //            Setpoint-|Setpoint            |
+  //                PV->-|PV                MV|->-ControlSignal
+  //                  SP-|SP                  |
   //                    -|Kp                  |
   //                    -|Ki                  |
   //                    -|Kd                  |
   //                    -|Kdf                 |
   //                    -|ERMAX               |
   //                    -|ERMIN               |
-  //                    -|OutMax              |
-  //                    -|OutMin              |
+  //                    -|MVMAX               |
+  //                    -|MVMIN               |
   //                    -|Ts                  |
   // ControlSignalManual-|Manual              |
-  //                    -|ManOn               |
+  //                    -|OnMan               |
   //                     +--------------------+
   static struct DbPIDcontrol DbPIDcontrol1 = {0};
-  DbPIDcontrol1.ProcessVariable = ProcessVariable    ; //Измеренное значение регулируемого параметра.
-  DbPIDcontrol1.Setpoint        = Setpoint           ; //Заданное значение регулируемого параметра.
-  DbPIDcontrol1.Kp              = 0.5               ; //Коэффициент усиления пропорциональный.
-  DbPIDcontrol1.Ki              = 2.0               ; //Коэффициент усиления интегральный.
+  DbPIDcontrol1.PV              = PV                 ; //Измеренное значение регулируемого параметра.
+  DbPIDcontrol1.SP              = SP                 ; //Заданное значение регулируемого параметра.
+  DbPIDcontrol1.Kp              = 0.5                ; //Коэффициент усиления пропорциональный.
+  DbPIDcontrol1.Ki              = 2.0                ; //Коэффициент усиления интегральный.
   DbPIDcontrol1.Kd              = 0.0                ; //Коэффициент усиления дифференциальный.
   DbPIDcontrol1.Kdf             = 1.0                ; //Коэффициент фильтрации дифференциальный Kdf=1/Tdf.
   DbPIDcontrol1.ERMAX           = 0.0001             ; //Зона нечувствительности к ошибке регулирования, максимум.
   DbPIDcontrol1.ERMIN           = -0.0001            ; //Зона нечувствительности к ошибке регулирования, минимум.
-  DbPIDcontrol1.OutMax          = 50.0               ; //Максимальное значение сигнала управления.
-  DbPIDcontrol1.OutMin          = 0.0                ; //Минимальное значение сигнала управления.
+  DbPIDcontrol1.MVMAX           = 50.0               ; //Максимальное значение сигнала управления.
+  DbPIDcontrol1.MVMIN           = 0.0                ; //Минимальное значение сигнала управления.
   DbPIDcontrol1.Ts              = Ts                 ; //Шаг дискретизации по времени в секундах.
   DbPIDcontrol1.Manual          = ControlSignalManual; //Сигнал управления в ручном режиме работы.
-  DbPIDcontrol1.ManOn           = not(HmiModeAuto)   ; //Включить ручной режим работы регулятора.
+  DbPIDcontrol1.OnMan           = not(HmiModeAuto)   ; //Включить ручной режим работы регулятора.
   FbPIDcontrol(&DbPIDcontrol1)                       ; //ПИД-регулятор.
   //                            = DbPIDcontrol1.Out  ; //Сигнал управления на исполнительный механизм.
 
@@ -229,7 +229,7 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   //   -|Ts          |
   //    +------------+
   static struct DbRamp DbRamp1 = {0};
-  DbRamp1.In    = DbPIDcontrol1.Out; //Входной сигнал.
+  DbRamp1.In    = DbPIDcontrol1.MV ; //Входной сигнал.
   DbRamp1.TAcc  = 0.1              ; //Время разгона на единицу [с].
   DbRamp1.TDec  = 0.1              ; //Время торможения на единицу [c].
   DbRamp1.Ts    = Ts               ; //Шаг дискретизации по времени [с].
@@ -286,8 +286,8 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   HmiStatusWord        = DbBitsToWord_SW.Out; //Выходной сигнал.
 
   //Ошибки.
-  ErrorProcessVariableLo = HmiProcessVariable <= 1.0 ; //Минимум  1  [Бар]
-  ErrorProcessVariableHi = HmiProcessVariable >= 9.0 ; //Максимум 9  [Бар]
+  ErrorPVLo              = HmiPV <= 1.0 ; //Минимум  1  [Бар]
+  ErrorPVHi              = HmiPV >= 9.0 ; //Максимум 9  [Бар]
   ErrorControlSignalLo   = HmiControlSignal   <= 5.0 ; //Минимум  5  [Гц]
   ErrorControlSignalHi   = HmiControlSignal   >= 49.0; //Минимум  49 [Гц]
   ErrorDrive             = not(DiDriveReady);
@@ -297,8 +297,8 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   //                            DbBitsToWord
   //                          +--------------+
   //                          | FbBitsToWord |
-  // ErrorProcessVariableLo->-|In0        Out|->-ErrorWord
-  // ErrorProcessVariableHi->-|In1           |
+  //              ErrorPVLo->-|In0        Out|->-ErrorWord
+  //              ErrorPVHi->-|In1           |
   //   ErrorControlSignalLo->-|In2           |
   //   ErrorControlSignalHi->-|In3           |
   //             ErrorDrive->-|In4           |
@@ -315,8 +315,8 @@ void Fb1PIRCA1(struct Db1PIRCA1 *p) //ПИД- регулятор давлени�
   //                       ->-|In15          |
   //                          +--------------+
   static struct DbBitsToWord DbBitsToWord_EW = {0};
-  DbBitsToWord_EW.In0  = ErrorProcessVariableLo; //Входной сигнал бит0.
-  DbBitsToWord_EW.In1  = ErrorProcessVariableHi; //Входной сигнал бит1.
+  DbBitsToWord_EW.In0  = ErrorPVLo; //Входной сигнал бит0.
+  DbBitsToWord_EW.In1  = ErrorPVHi; //Входной сигнал бит1.
   DbBitsToWord_EW.In2  = ErrorControlSignalLo  ; //Входной сигнал бит2.
   DbBitsToWord_EW.In3  = ErrorControlSignalHi  ; //Входной сигнал бит3.
   DbBitsToWord_EW.In4  = ErrorDrive            ; //Входной сигнал бит4.
