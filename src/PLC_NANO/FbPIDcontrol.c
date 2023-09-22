@@ -3,25 +3,25 @@
 #include <iso646.h>
 #include "FbPIDcontrol.h"
 
-#define PV              p->PV
-#define SP              p->SP
-#define Kp              p->Kp
-#define Ki              p->Ki
-#define Kd              p->Kd
-#define Kdf             p->Kdf
-#define ERMAX           p->ERMAX
-#define ERMIN           p->ERMIN
-#define MVMAX           p->MVMAX
-#define MVMIN           p->MVMIN
-#define Ts              p->Ts
-#define Manual          p->Manual
-#define OnMan           p->OnMan
-#define MV              p->MV
-#define Er              p->Er
-#define Ppart           p->Ppart
-#define Ipart           p->Ipart
-#define Dpart           p->Dpart
-#define Dintegral       p->Dintegral
+#define PV        p->PV
+#define SP        p->SP
+#define Kp        p->Kp
+#define Ki        p->Ki
+#define Kd        p->Kd
+#define Kdf       p->Kdf
+#define ERMAX     p->ERMAX
+#define ERMIN     p->ERMIN
+#define MVMAX     p->MVMAX
+#define MVMIN     p->MVMIN
+#define Ts        p->Ts
+#define Manual    p->Manual
+#define OnMan     p->OnMan
+#define MV        p->MV
+#define Er        p->Er
+#define Ppart     p->Ppart
+#define Ipart     p->Ipart
+#define Dpart     p->Dpart
+#define Dintegral p->Dintegral
 
 void FbPIDcontrol(struct DbPIDcontrol *p)
 {

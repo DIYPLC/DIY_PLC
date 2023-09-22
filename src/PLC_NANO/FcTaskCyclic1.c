@@ -8,6 +8,7 @@ extern struct GlobalVar GV; //Глобальные переменные ПЛК.
 
 void FcTaskCyclic1(bool Reset, uint32_t Ts_ms) //Задача выполняется с плавающим временем цикла.
 {
+  GV.Di0 = false;
   return;
 }
 
