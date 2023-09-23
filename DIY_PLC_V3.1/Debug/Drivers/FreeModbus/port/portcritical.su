@@ -1,2 +1,0 @@
-portcritical.c:6:6:__critical_enter	4	static,ignoring_inline_asm
-portcritical.c:11:6:__critical_exit	4	static,ignoring_inline_asm
