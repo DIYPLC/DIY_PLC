@@ -81,7 +81,7 @@ Add/remove include path...
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define MODBUS_RTU_SLAVE_ADDRESS  1
-#define MW usSRegHoldBuf[0] //MODBUS_HOLDING_REGISTER
+#define MW usSRegHoldBuf //MODBUS_HOLDING_REGISTER
 /* USER CODE END PD */
 ...
 /* USER CODE BEGIN PV */
