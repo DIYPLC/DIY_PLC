@@ -146,7 +146,7 @@ void Program_delay_500ms(void)
 
 void PLC_Digital_output_cyclic(struct GlobalVar *p)
 {
-  if (p->Do0)
+  if (p->Do1)
   {
     //LED_ON();
   }
