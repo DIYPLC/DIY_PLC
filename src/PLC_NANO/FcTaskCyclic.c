@@ -1,0 +1,81 @@
+#include <stdint.h>        //uint8_t...uint64_t int8_t...int64_t
+#include <stdbool.h>       //bool true false
+#include <iso646.h>        //and or not
+#include "FcTaskCyclic.h" //Задача вызывается циклически.
+#include "GlobalVar.h"     //Глобальные переменные ПЛК.
+#include "FbBlink.h"
+#include "FbFilterA.h"
+
+#define MW GV.MW //Регистры MODBUS
+
+extern struct GlobalVar GV; //Глобальные переменные ПЛК.
+static struct DbBlink DbBlink1 = { 0 };
+static struct DbFilterA DbFilterA1 = { 0 };
+
+void FcTaskCyclic(bool Reset, uint32_t Ts_ms) //Задача выполняется с плавающим временем цикла.
+{
+
+  //Карта регистров MODBUS HOLDING REGISTERS  Slave Address 1
+  //Время работы мс.
+  MW[0] = 0x7fff bitand GV.millis_ms; //0x7fff ограничение до 2**15-1
+  //Время скана мс.
+  MW[1] = 0x7fff bitand GV.Ts_ms; //0x7fff ограничение до 2**15-1
+  //Максимальное время скана мс.
+  MW[2] = 0x7fff bitand GV.Ts_ms_max; //0x7fff ограничение до 2**15-1
+
+  //Пример работы с дискретными алгоритмами.
+  //Мигалка.
+  //            DbBlink
+  //    +---------------------+
+  //    |       FbBlink       |
+  //   -|Time_on_ms        Out|->-
+  //   -|Time_off_ms          |
+  //   -|Ts_ms                |
+  //   -|Reset                |
+  //    +---------------------+
+  DbBlink1.Time_on_ms  = 500         ;  //Время импульса [мс].
+  DbBlink1.Time_off_ms = 500         ; //Время паузы [мс].
+  DbBlink1.Ts_ms       = Ts_ms       ; //Шаг дискретизации по времени [мс].
+  DbBlink1.Reset       = Reset       ; //Сброс при перезагрузке.
+  FbBlink(&DbBlink1)                 ; //Мигалка.
+  GV.Blink1000ms       = DbBlink1.Out;  //Мигающая лампочка.
+
+  GV.Do1 = GV.Blink1000ms;
+
+  //Пример работы с аналоговыми алгоритмами.
+  //Фильтр апериодический.
+  //      DbFilterA
+  //    +-----------+
+  //    | FbFilterA |
+  // ->-|In      Out|->-
+  //   -|Tf         |
+  //   -|Ts         |
+  //    +-----------+
+  DbFilterA1.In = (float) DbBlink1.Out; //Входной сигнал до фильтрации.
+  DbFilterA1.Tf = 0.15                ; //Постоянная времени фильтра [с].
+  DbFilterA1.Ts = GV.Ts               ;  //Шаг дискретизации по времени [с].
+  FbFilterA(&DbFilterA1)              ; //Фильтр апериодический.
+  //            = DbFilterA1.Out      ; //Выходной сигнал после фильтрации.
+
+  return;
+}
+
+//  +---------+
+//  | GNU GPL |
+//  +---------+
+//  |
+//  |
+//  .= .-_-. =.
+// ((_/)o o(\_))
+//  `-'(. .)`-'
+//  |/| \_/ |\
+//  ( |     | )
+//  /"\_____/"\
+//  \__)   (__/
+// @COPYLEFT ALL WRONGS RESERVED :)
+// Author: VA
+// Contacts: DIY.PLC.314@gmail.com
+// License: GNU GPL v2
+//
+// https://www.youtube.com/@DIY_PLC
+// https://github.com/DIYPLC

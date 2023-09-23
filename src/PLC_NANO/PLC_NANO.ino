@@ -1,4 +1,4 @@
-//Программирование в стиле ПЛК версия от 24.07.2022.
+//Программирование в стиле ПЛК версия от 23.09.2023.
 //Библиотека LibPlc.
 //В файле FcTask100ms.c Пример мигания светодиодом.
 //В файле MODBUS.c Сеть MODBUS ASCII SALVE ADR1 RS485 для SCADA/HMI.
@@ -11,12 +11,21 @@
 #include "GlobalVar.h" //Глобальные переменные ПЛК.
 #include "M328P_HW.h" //Аппаратно зависимые функции ATmega328p 16MHz 5VDC
 #include "MODBUS.h" //Сеть MODBUS ASCII SALVE.
-#include "PLC.h"
-#include "FcTaskCyclic1.h" //Задача выполняется с плавающим временем цикла.
+#include "FcTaskCyclic.h" //Задача выполняется с плавающим временем цикла.
 #include "FcTask100ms.h" //Задача выполняется каждые 100ms.
+#include "FbTs.h"
+#include "FbBlink.h"
+#include "FbFilterA.h"
+
+#define SetBit(Var,Bit)   ( Var = Var |  (1 << (Bit)) )
+#define ResetBit(Var,Bit) ( Var = Var & ~(1 << (Bit)) )
+#define MW GV.MW
 
 struct Modbus Modbus0 = {0}; //Сеть MODBUS ASCII SALVE.
 struct GlobalVar GV = {0}; //Глобальные переменные ПЛК.
+static struct DbTs DbTs1 = { 0 };
+static struct DbBlink DbBlink1 = { 0 };
+static struct DbFilterA DbFilterA1 = { 0 };
 
 int main(void)
 {
@@ -26,36 +35,60 @@ int main(void)
   USART0_INIT(); //Инициализация USART0 9600 8N1
   Modbus0.SlaveAddress = 1; //Адресс устройства в сети MODBUS ASCII.
   sei(); //Включить все прерывания.
-  Calc_Ts_ms(GV.Uptime_ms); //Время предидущего скана ПЛК [мс].
-  FcTaskCyclic1(true, 0); //Задача выполняется с плавающим временем цикла.
-  FcTask100ms(true, 0); //Задача выполняется каждые 100ms.
+
+  GV.Reset = true;
+  //Расчет времени скана.
+  //             DbTs
+  //    +---------------------+
+  //    |        FbTs         |
+  //   -|millis          Ts_ms|->-
+  //   -|Reset              Ts|->-
+  //    |            Ts_ms_max|->-
+  //    |             Uptime_s|->-
+  //    +---------------------+
+  DbTs1.millis = GV.millis_ms   ; //millis() Arduino.
+  DbTs1.Reset  = GV.Reset       ; //Сброс при перезагрузке.
+  FbTs(&DbTs1)                  ; //Расчет времени скана.
+  GV.Ts_ms     = DbTs1.Ts_ms    ; //Шаг дискретизации по времени [мс].
+  GV.Ts        = DbTs1.Ts       ; //Шаг дискретизации по времени [с].
+  GV.Ts_ms_max = DbTs1.Ts_ms_max; //Максимальное время скана [мс].
+  GV.Uptime_s  = DbTs1.Uptime_s ; //Время в работе [мс].
+
+  FcTaskCyclic(GV.Reset, GV.Ts_ms); //Задача выполняется с плавающим временем цикла.
+  FcTask100ms(true, 0)            ; //Задача выполняется каждые 100ms.
+
   while (1)
   {
-    GV.Ts_ms = Calc_Ts_ms(GV.Uptime_ms); //Время предидущего скана ПЛК [мс].
-    GV.Ts_ms_max = Calc_Ts_ms_max(GV.Ts_ms); //Максимальное время скана ПЛК [мс].
     PLC_Digital_input_cyclic(&GV) ;
-    FcTaskCyclic1(false, GV.Ts_ms); //Задача выполняется с плавающим временем цикла.
+
+    GV.Reset = false;
+    //Расчет времени скана.
+    //             DbTs
+    //    +---------------------+
+    //    |        FbTs         |
+    //   -|millis          Ts_ms|->-
+    //   -|Reset              Ts|->-
+    //    |            Ts_ms_max|->-
+    //    |             Uptime_s|->-
+    //    +---------------------+
+    DbTs1.millis = GV.millis_ms   ; //millis() Arduino.
+    DbTs1.Reset  = GV.Reset       ; //Сброс при перезагрузке.
+    FbTs(&DbTs1)                  ; //Расчет времени скана.
+    GV.Ts_ms     = DbTs1.Ts_ms    ; //Шаг дискретизации по времени [мс].
+    GV.Ts        = DbTs1.Ts       ; //Шаг дискретизации по времени [с].
+    GV.Ts_ms_max = DbTs1.Ts_ms_max; //Максимальное время скана [мс].
+    GV.Uptime_s  = DbTs1.Uptime_s ; //Время в работе [мс].
+
+    FcTaskCyclic(GV.Reset, GV.Ts_ms); //Задача выполняется с плавающим временем цикла.
+
     PLC_Digital_output_cyclic(&GV);
-    //Карта регистров MODBUS HOLDING REGISTERS  Slave Address 1
-    //HMI <-- MW[ 0] <-- PLC (uint32) Uptime_ms
-    //HMI <-- MW[ 1] <-- PLC (uint32) Uptime_ms
-    //HMI <-- MW[ 2] <-- PLC (uint16) Ts_ms
-    //HMI <-- MW[ 3] <-- PLC (uint32) Ts_ms_max
-    //HMI <-- MW[ 4] <-- PLC (uint32) Ts_ms_max
-    //HMI <-- MW[ 5] <-- PLC (uint16) ErrorCounter
-    GV.MW[0] = uint32_to_uint16_register_lo(GV.Uptime_ms);
-    GV.MW[1] = uint32_to_uint16_register_hi(GV.Uptime_ms);
-    GV.MW[2] = (uint16_t)GV.Ts_ms;
-    GV.MW[3] = uint32_to_uint16_register_lo(GV.Ts_ms_max);
-    GV.MW[4] = uint32_to_uint16_register_hi(GV.Ts_ms_max);
-    GV.MW[5] = Modbus0.ErrorCounter;
   }
 }
 
 ISR(TIMER2_COMPA_vect) //Циклическое прерывание каждую 1ms
 {
   cli(); //Выключить все прерывания.
-  GV.Uptime_ms = GV.Uptime_ms + 1; //Аналог Arduino millis();
+  GV.millis_ms = GV.millis_ms + 1; //Аналог Arduino millis();
   sei(); //Включить все прерывания.
 }
 

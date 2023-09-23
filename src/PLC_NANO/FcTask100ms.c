@@ -6,10 +6,13 @@
 #include "FbGSS.h"          //Генератор сигналов и псевдослучайных чисел.
 
 extern struct GlobalVar GV; //Глобальные переменные ПЛК.
+static struct DbGSS DbGSS1 = {0};
 
 void FcTask100ms(bool Reset, uint32_t Ts_ms) //Задача выполняется каждые 100ms.
 {
-  float Ts = ((float)Ts_ms) * 0.001; //Шаг дискретизации по времени в секундах.
+
+  //Шаг дискретизации по времени [с].
+  float Ts = ((float)Ts_ms) * 0.001;
 
   //Генератор сигналов и псевдослучайных чисел.
   //             DbGSS
@@ -22,7 +25,6 @@ void FcTask100ms(bool Reset, uint32_t Ts_ms) //Задача выполняетс
   //   -|PulseTime    Triangle|->-
   //   -|Ts               Prnd|->-
   //    +---------------------+
-  static struct DbGSS DbGSS1 = {0};
   DbGSS1.Amplitude = 1.0              ; //Амплитуда выходного сигнала.
   DbGSS1.Period    = 1.0              ; //Период выходного сигнала [с].
   DbGSS1.Phase     = 0.0              ; //Фаза выходного сигнала [рад].
@@ -33,10 +35,9 @@ void FcTask100ms(bool Reset, uint32_t Ts_ms) //Задача выполняетс
   //               = DbGSS1.Sine      ; //Синусоидальный сигнал.
   //               = DbGSS1.Cosine    ; //Косинусоидальный сигнал.
   //               = DbGSS1.RectangleR; //Прямоугольный сигнал вещественный.
-  GV.Do2           = DbGSS1.RectangleB; //Прямоугольный сигнал булевый.
+  //               = DbGSS1.RectangleB; //Прямоугольный сигнал булевый.
   //               = DbGSS1.Triangle  ; //Треугольный, линейно нарастающий и убывающий сигнал.
   //               = DbGSS1.Prnd      ; //Псевдослучайные числа в диапазоне 0...1.
-
 
   return;
 }

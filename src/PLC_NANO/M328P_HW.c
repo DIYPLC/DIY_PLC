@@ -53,7 +53,7 @@ void USART0_INIT(void) //Инициализация USART0 9600 8N1
 
 void USART0_RX_ON(void) //Включаем приемник
 {
-  LED_OFF();
+  //LED_OFF();
   //UCSR0B = 0b10010000; //Включаем приемник
   RST_BIT(UCSR0B, TXCIE0); //Запрет прерывания по завершении передачи.
   RST_BIT(UCSR0B,  TXEN0); //Запрет передачи.
@@ -64,7 +64,7 @@ void USART0_RX_ON(void) //Включаем приемник
 
 void USART0_TX_ON(void) //Включаем передатчик
 {
-  LED_ON();
+  //LED_ON();
   //UCSR0B = 0b01001000; //Включаем передатчик
   RST_BIT(UCSR0B, RXCIE0); //Запрет прерывания по завершении приема.
   RST_BIT(UCSR0B,  RXEN0); //Запрет приема.
@@ -148,11 +148,11 @@ void PLC_Digital_output_cyclic(struct GlobalVar *p)
 {
   if (p->Do1)
   {
-    //LED_ON();
+    LED_ON();
   }
   else
   {
-    //LED_OFF();
+    LED_OFF();
   }
   return;
 }

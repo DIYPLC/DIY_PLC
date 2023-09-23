@@ -33,7 +33,7 @@ void FbTs(struct DbTs *p)
   else
   {
     //Данное вычисление зависит от платформы надо перепроверить!
-    Ts_ms = (0xFFFFFFFF - Time_previous_ms) + millis + 1; //разность времени при переполнении.
+    ;//Ts_ms = (0xFFFFFFFF - Time_previous_ms) + millis + 1; //разность времени при переполнении.
   }
   //4294967295ms = 49.7 day!
   //STM32F103C8T6 STM32CubeIDE 1.6.1
