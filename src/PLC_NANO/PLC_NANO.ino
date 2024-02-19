@@ -17,8 +17,8 @@
 #include "FbBlink.h"
 #include "FbFilterA.h"
 
-#define SetBit(Var,Bit)   ( Var = Var |  (1 << (Bit)) )
-#define ResetBit(Var,Bit) ( Var = Var & ~(1 << (Bit)) )
+#define SetBit(Var,Bit)   ( (Var) = (Var) |  (1 << (Bit)) )
+#define ResetBit(Var,Bit) ( (Var) = (Var) & ~(1 << (Bit)) )
 #define MW GV.MW
 
 struct Modbus Modbus0 = {0}; //Сеть MODBUS ASCII SALVE.
