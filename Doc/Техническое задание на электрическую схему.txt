@@ -43,6 +43,9 @@ ESP32
 Raspberry pi zero
 Рассмотреть возможность установки зеленого светодиода мигающего при выполнении программы.
 
+Для хранения настроек:
+Microchip Technology Inc 47L16-E/SN NVRAM EERAM
+CYPRESS FM24CL64B-GTR FRAM
 
 При проектировании использовать стандарты:
 IEC 1131
