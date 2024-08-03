@@ -8,6 +8,10 @@
 //Windows 10 pro 64bit
 //программатор по умолчанию AVRISP mkll old boot loader
 #include <stdint.h>
+#include <stdbool.h>
+#include <iso646.h>
+#include <math.h>
+#include <avr/interrupt.h>
 #include "GlobalVar.h" //Глобальные переменные ПЛК.
 #include "M328P_HW.h" //Аппаратно зависимые функции ATmega328p 16MHz 5VDC
 #include "MODBUS.h" //Сеть MODBUS ASCII SALVE.
@@ -17,6 +21,7 @@
 #include "FbBlink.h"
 #include "FbFilterA.h"
 
+#define F_CPU 16000000UL
 #define SetBit(Var,Bit)   ( (Var) = (Var) |  (1 << (Bit)) )
 #define ResetBit(Var,Bit) ( (Var) = (Var) & ~(1 << (Bit)) )
 #define MW GV.MW
