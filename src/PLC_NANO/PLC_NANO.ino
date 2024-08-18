@@ -1,6 +1,6 @@
 // Программирование в стиле ПЛК версия от 18.08.2024.
 // Библиотека LIB_PLC.
-// В файле mb.c Сеть MODBUS RTU SALVE ADR1 RS485 для SCADA/HMI.
+// В файле MODBUS.c Сеть MODBUS RTU SALVE ADR1 RS485 для SCADA/HMI.
 // Ресурсы ПЛК в GlobalVar.h
 // Arduino Nano (ATmega328p 16MHz 5VDC)
 // Arduino IDE 1.8.13
