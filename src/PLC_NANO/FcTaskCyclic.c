@@ -5,33 +5,36 @@
 #include "GlobalVar.h"     //Глобальные переменные ПЛК.
 #include "FbBlink.h"
 #include "FbFilterA.h"
+#include "MODBUS.h"
 
-#define MW GV.MW //Регистры MODBUS
+#define MW usRegHoldingBuf //Регистры MODBUS
 
+extern uint16_t usRegHoldingBuf[];
 extern struct GlobalVar GV; //Глобальные переменные ПЛК.
-static struct DbBlink DbBlink1 = { 0 };
-static struct DbFilterA DbFilterA1 = { 0 };
+static struct DbBlink DbBlink1 = {0};
+static struct DbFilterA DbFilterA1 = {0};
 
 void FcTaskCyclic(bool Reset, uint32_t Ts_ms) //Задача выполняется с плавающим временем цикла.
 {
 
   //Карта регистров MODBUS HOLDING REGISTERS  Slave Address 1
   //Время работы мс.
-  MW[0] = 0x7fff bitand GV.millis_ms; //0x7fff ограничение до 2**15-1
+  MW[0] = 0x7fff bitand GV.millis_ms; // HOLDING REGISTER 0 int16
   //Время скана мс.
-  MW[1] = 0x7fff bitand GV.Ts_ms; //0x7fff ограничение до 2**15-1
+  MW[1] = 0x7fff bitand GV.Ts_ms; // HOLDING REGISTER 1 int16
   //Максимальное время скана мс.
-  MW[2] = 0x7fff bitand GV.Ts_ms_max; //0x7fff ограничение до 2**15-1
-
+  MW[2] = 0x7fff bitand GV.Ts_ms_max; // HOLDING REGISTER 2 int16
   //Blink
-  MW[3] = GV.Do1;
+  MW[3] = 0x7fff bitand GV.Uptime_s; // HOLDING REGISTER 3 int16
+  //Blink
+  MW[4] = GV.Do1; // HOLDING REGISTER 4 int16
 
   //Тест на сложение.
   if (Reset) {
-    MW[4] = -2;
-    MW[5] = 6;
+    MW[5] = -2;
+    MW[6] = -3;
   }
-  MW[6] = MW[4] + MW[5];
+  MW[7] = MW[6] + MW[5];
 
   //Пример работы с дискретными алгоритмами.
   //Мигалка.

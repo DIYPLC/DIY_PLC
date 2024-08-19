@@ -158,6 +158,14 @@ typedef struct
   pxMBFunctionHandler pxHandler;
 } xMBFunctionHandler;
 
+typedef enum {
+  MB_REG_READ,  /*!< Read register values and pass to protocol stack. */
+  MB_REG_WRITE  /*!< Update register values. */
+} eMBRegisterMode;
+
+static uint16_t usRegHoldingStart = REG_HOLDING_START;
+volatile uint16_t usRegHoldingBuf[REG_HOLDING_NREGS];
+
 typedef void (*pvMBFrameStart)(void);
 typedef void (*pvMBFrameStop)(void);
 typedef eMBErrorCode (*peMBFrameReceive)(uint8_t *pucRcvAddress, uint8_t **pucFrame, uint16_t *pusLength);
@@ -233,6 +241,8 @@ static enum {
   STATE_NOT_INITIALIZED
 } eMBState = STATE_NOT_INITIALIZED;
 
+eMBErrorCode eMBRegHoldingCB(uint8_t* pucRegBuffer, uint16_t usAddress, uint16_t usNRegs, eMBRegisterMode eMode);
+
 bool xMBPortEventInit(void);
 bool xMBPortEventPost(eMBEventType eEvent);
 bool xMBPortEventGet(/*@out@ */ eMBEventType *eEvent);
@@ -278,6 +288,35 @@ static xMBFunctionHandler xFuncHandlers[MB_FUNC_HANDLERS_MAX] = {
   { MB_FUNC_WRITE_REGISTER, eMBFuncWriteHoldingRegister },
   { MB_FUNC_READWRITE_MULTIPLE_REGISTERS, eMBFuncReadWriteMultipleHoldingRegister }
 };
+
+eMBErrorCode eMBRegHoldingCB(uint8_t* pucRegBuffer, uint16_t usAddress, uint16_t usNRegs, eMBRegisterMode eMode) {
+  eMBErrorCode eStatus = MB_ENOERR;
+  int iRegIndex;
+  if ((usAddress >= REG_HOLDING_START) && (usAddress + usNRegs <= REG_HOLDING_START + REG_HOLDING_NREGS)) {
+    iRegIndex = (int)(usAddress - usRegHoldingStart);
+    switch (eMode) {
+      case MB_REG_READ:
+        while (usNRegs > 0) {
+          *pucRegBuffer++ = (uint8_t)(usRegHoldingBuf[iRegIndex] >> 8);
+          *pucRegBuffer++ = (uint8_t)(usRegHoldingBuf[iRegIndex] & 0xFF);
+          iRegIndex++;
+          usNRegs--;
+        }
+        break;
+      case MB_REG_WRITE:
+        while (usNRegs > 0) {
+          usRegHoldingBuf[iRegIndex] = *pucRegBuffer++ << 8;
+          usRegHoldingBuf[iRegIndex] |= *pucRegBuffer++;
+          iRegIndex++;
+          usNRegs--;
+        }
+        break;
+    }
+  } else {
+    eStatus = MB_ENOREG;
+  }
+  return eStatus;
+}
 
 eMBErrorCode eMBInit(uint8_t ucSlaveAddress, uint8_t ucPort, uint32_t ulBaudRate, eMBParity eParity) {
   eMBErrorCode eStatus = MB_ENOERR;

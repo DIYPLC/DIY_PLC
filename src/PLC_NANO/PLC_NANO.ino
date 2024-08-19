@@ -11,6 +11,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <iso646.h>
 #include "GlobalVar.h" // Глобальные переменные ПЛК.
 #include "M328P_HW.h" // Аппаратно зависимые функции ATmega328p 16MHz 5VDC
 #include "FcTaskCyclic.h" // Задача выполняется с плавающим временем цикла.
@@ -19,12 +20,10 @@
 
 #define SetBit(Var,Bit)   ( (Var) = (Var) |  (1 << (Bit)) )
 #define ResetBit(Var,Bit) ( (Var) = (Var) & ~(1 << (Bit)) )
-#define MW GV.MW
 
 struct GlobalVar GV = {0}; //Глобальные переменные ПЛК.
-static struct DbTs DbTs1 = { 0 };
-static uint16_t usRegHoldingStart = REG_HOLDING_START;
-static uint16_t usRegHoldingBuf[REG_HOLDING_NREGS];
+static struct DbTs DbTs1 = {0};
+extern uint16_t usRegHoldingBuf[];
 
 int main(void)
 {
@@ -34,8 +33,6 @@ int main(void)
   eMBInit(1, 0, 9600, MB_PAR_NONE);  // MODBUS RTU SLAVE ADDRESS 1, USART0 9600 8N1.
   sei(); //Включить все прерывания.
   eMBEnable();
-  usRegHoldingBuf[1] = -3; // HOLDING REGISTER 1 int16
-  usRegHoldingBuf[2] = -2; // HOLDING REGISTER 2 int16
 
   GV.Reset = true;
   //Расчет времени скана.
@@ -60,6 +57,7 @@ int main(void)
   while (1)
   {
     PLC_Digital_input_cyclic(&GV) ;
+    (void)eMBPoll();
 
     GV.Reset = false;
     //Расчет времени скана.
@@ -79,49 +77,9 @@ int main(void)
     GV.Ts_ms_max = DbTs1.Ts_ms_max; //Максимальное время скана [мс].
     GV.Uptime_s  = DbTs1.Uptime_s ; //Время в работе [мс].
 
-    (void)eMBPoll();
-    usRegHoldingBuf[0] = (uint16_t)GV.Uptime_s; // HOLDING REGISTER 0 int16
-    usRegHoldingBuf[3] = usRegHoldingBuf[2] + usRegHoldingBuf[1]; // HOLDING REGISTER 3 int16
-
     FcTaskCyclic(GV.Reset, GV.Ts_ms); //Задача выполняется с плавающим временем цикла.
     PLC_Digital_output_cyclic(&GV);
   }
-}
-
-ISR(TIMER2_COMPA_vect) //Циклическое прерывание каждую 1ms
-{
-  cli(); //Выключить все прерывания.
-  GV.millis_ms = GV.millis_ms + 1; //Аналог Arduino millis();
-  sei(); //Включить все прерывания.
-}
-
-eMBErrorCode eMBRegHoldingCB(uint8_t* pucRegBuffer, uint16_t usAddress, uint16_t usNRegs, eMBRegisterMode eMode) {
-  eMBErrorCode eStatus = MB_ENOERR;
-  int iRegIndex;
-  if ((usAddress >= REG_HOLDING_START) && (usAddress + usNRegs <= REG_HOLDING_START + REG_HOLDING_NREGS)) {
-    iRegIndex = (int)(usAddress - usRegHoldingStart);
-    switch (eMode) {
-      case MB_REG_READ:
-        while (usNRegs > 0) {
-          *pucRegBuffer++ = (uint8_t)(usRegHoldingBuf[iRegIndex] >> 8);
-          *pucRegBuffer++ = (uint8_t)(usRegHoldingBuf[iRegIndex] & 0xFF);
-          iRegIndex++;
-          usNRegs--;
-        }
-        break;
-      case MB_REG_WRITE:
-        while (usNRegs > 0) {
-          usRegHoldingBuf[iRegIndex] = *pucRegBuffer++ << 8;
-          usRegHoldingBuf[iRegIndex] |= *pucRegBuffer++;
-          iRegIndex++;
-          usNRegs--;
-        }
-        break;
-    }
-  } else {
-    eStatus = MB_ENOREG;
-  }
-  return eStatus;
 }
 
 //  +---------+

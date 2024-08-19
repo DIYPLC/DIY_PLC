@@ -25,13 +25,6 @@ typedef enum {
   MB_PAR_EVEN   /*!< Even parity. */
 } eMBParity;
 
-typedef enum {
-  MB_REG_READ,  /*!< Read register values and pass to protocol stack. */
-  MB_REG_WRITE  /*!< Update register values. */
-} eMBRegisterMode;
-
-eMBErrorCode eMBRegHoldingCB(uint8_t* pucRegBuffer, uint16_t usAddress, uint16_t usNRegs, eMBRegisterMode eMode);  // main.c *
-
 eMBErrorCode eMBInit(uint8_t ucSlaveAddress, uint8_t ucPort, uint32_t ulBaudRate, eMBParity eParity);
 eMBErrorCode eMBEnable(void);
 eMBErrorCode eMBPoll(void);
