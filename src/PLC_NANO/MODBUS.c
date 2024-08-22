@@ -327,7 +327,7 @@ eMBErrorCode eMBInit(uint8_t ucSlaveAddress, uint8_t ucPort, uint32_t ulBaudRate
     //    switch (eMode)
     //      case MB_RTU:
     pvMBFrameStartCur = eMBRTUStart;
-    pvMBFrameStopCur = eMBRTUStop;
+    //pvMBFrameStopCur = eMBRTUStop;
     peMBFrameSendCur = eMBRTUSend;
     peMBFrameReceiveCur = eMBRTUReceive;
     pvMBFrameCloseCur = MB_PORT_HAS_CLOSE ? vMBPortClose : NULL;
