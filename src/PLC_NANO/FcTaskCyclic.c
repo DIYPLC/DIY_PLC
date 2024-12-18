@@ -1,10 +1,9 @@
 #include <stdint.h>        //uint8_t...uint64_t int8_t...int64_t
 #include <stdbool.h>       //bool true false
 #include <iso646.h>        //and or not
+#include "LIB_PLC.h"
+
 #include "FcTaskCyclic.h" //Задача вызывается циклически.
-#include "GlobalVar.h"     //Глобальные переменные ПЛК.
-#include "FbBlink.h"
-#include "FbFilterA.h"
 #include "MODBUS.h"
 
 #define MW usRegHoldingBuf //Регистры MODBUS
