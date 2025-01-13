@@ -23,10 +23,6 @@ void FcTaskCyclic(bool Reset, uint32_t Ts_ms) //Задача выполняет�
   MW[1] = 0x7fff bitand GV.Ts_ms; // HOLDING REGISTER 1 int16
   //Максимальное время скана мс.
   MW[2] = 0x7fff bitand GV.Ts_ms_max; // HOLDING REGISTER 2 int16
-  //Blink
-  MW[3] = 0x7fff bitand GV.Uptime_s; // HOLDING REGISTER 3 int16
-  //Blink
-  MW[4] = GV.Do1; // HOLDING REGISTER 4 int16
 
   //Тест на сложение.
   if (Reset) {
