@@ -11,6 +11,16 @@
 Клеммы для подключения внешних проводов пружинные 0,5...0,75мм2.
 Расположение клемм вертикальное.
 
+Рекомендуемое количество ресурсов базовой комплектации PLC.
+8 digital input 24VDC (4Di HTL encoder)
+8 digital output 24VDC
+4 analog input 4-20mA
+2 analog output 4-20mA
+1 RS485 MODBUS RTU
+1 Ehernet MODBUS TCP / NTP CLIENT
+Дополнительно:
+SWD \ JTAG + RTC + 1Kb EEPROM + 1Kb NVRAM
+
 Размеры рекомендуемых к использованию SMD компонентов
 Минимально возможный для ручной пайки 0603
 Самых ходовой 0805
