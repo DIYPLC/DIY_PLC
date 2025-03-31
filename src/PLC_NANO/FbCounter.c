@@ -12,55 +12,55 @@
 #define Ovf      p->Ovf
 #define IncPrev  p->IncPrev
 #define DecPrev  p->DecPrev
-#define LIM_MAX  2147483647 //Максимальное значение счетчика.
-#define LIM_MIN -2147483648 //Минимальное значение счетчика.
+#define LIM_MAX  2147483647 // Максимальное значение счетчика.
+#define LIM_MIN -2147483648 // Минимальное значение счетчика.
 
 void FbCounter(struct DbCounter *p)
 {
 
-  //Прямой счет по нарастающему фронту импульсов +1.
+  // Прямой счет по нарастающему фронту импульсов +1.
   if (Inc and not(IncPrev))
   {
-    if (Cnt >= LIM_MAX) //Ограничение сверху.
+    if (Cnt >= LIM_MAX) // Ограничение сверху.
     {
       Cnt = LIM_MAX;
       Ovf = true;
     }
-    else //Прямой счет.
+    else // Прямой счет.
     {
       Cnt = Cnt + 1;
       Ovf = false;
     }
   }
 
-  //Обратный счет по нарастающему фронту импульсов -1.
+  // Обратный счет по нарастающему фронту импульсов -1.
   if (Dec and not(DecPrev))
   {
-    if (Cnt <= LIM_MIN) //Ограничение снизу.
+    if (Cnt <= LIM_MIN) // Ограничение снизу.
     {
       Cnt = LIM_MIN;
       Ovf = true;
     }
-    else //Обратный счет.
+    else // Обратный счет.
     {
       Cnt = Cnt - 1;
       Ovf = false;
     }
   }
 
-  //Установить значение счетчика.
+  // Установить значение счетчика.
   if (SetValue)
   {
     Cnt = Value;
   }
 
-  //Сбросить счетчик.
+  // Сбросить счетчик.
   if (Reset)
   {
     Cnt = 0;
   }
 
-  //Запомнить предыдущее состояние входа.
+  // Запомнить предыдущее состояние входа.
   IncPrev = Inc;
   DecPrev = Dec;
 

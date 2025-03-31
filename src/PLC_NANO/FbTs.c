@@ -15,7 +15,7 @@
 void FbTs(struct DbTs *p)
 {
 
-  //Инициализация при первом старте.
+  // Инициализация при первом старте.
   if (Reset)
   {
     Time_previous_ms = millis;
@@ -25,40 +25,40 @@ void FbTs(struct DbTs *p)
     Uptime_s = 0;
   }
 
-  //Рассчет шага дискретизации по времени [мс].
+  // Рассчет шага дискретизации по времени [мс].
   if (Time_previous_ms <= millis)
   {
-    Ts_ms = millis - Time_previous_ms; //разность времени без переполнения (займа).
+    Ts_ms = millis - Time_previous_ms; // Разность времени без переполнения (займа).
   }
   else
   {
-    //Данное вычисление зависит от платформы надо перепроверить!
-    ;//Ts_ms = (0xFFFFFFFF - Time_previous_ms) + millis + 1; //разность времени при переполнении.
+    // Данное вычисление зависит от платформы надо перепроверить!
+    ;// Ts_ms = (0xFFFFFFFF - Time_previous_ms) + millis + 1; // разность времени при переполнении.
   }
-  //4294967295ms = 49.7 day!
-  //STM32F103C8T6 STM32CubeIDE 1.6.1
-  //sizeof(bool) = 1byte = 8bit
-  //sizeof(uint8_t) = 1byte = 8bit
-  //sizeof(uint16_t) = 2byte = 16bit
-  //sizeof(uint32_t) = 4byte = 32bit
-  //sizeof(uint64_t) = 8byte = 64bit
-  //sizeof(float) = 4byte = 32bit
-  //sizeof(double) = 8byte = 64bit
+  // 4294967295ms = 49.7 day!
+  // STM32F103C8T6 STM32CubeIDE 1.6.1
+  // sizeof(bool) = 1byte = 8bit
+  // sizeof(uint8_t) = 1byte = 8bit
+  // sizeof(uint16_t) = 2byte = 16bit
+  // sizeof(uint32_t) = 4byte = 32bit
+  // sizeof(uint64_t) = 8byte = 64bit
+  // sizeof(float) = 4byte = 32bit
+  // sizeof(double) = 8byte = 64bit
 
-  Time_previous_ms = millis; //Запомнить предидущее состояние.
+  Time_previous_ms = millis; // Запомнить предидущее состояние.
 
-  //Шаг дискретизации по времени [с].
+  // Шаг дискретизации по времени [с].
   Ts = ((float)Ts_ms) * 0.001;
 
-  //Максимальное время скана [мс].
+  // Максимальное время скана [мс].
   if (Ts_ms > Ts_ms_max)
   {
     Ts_ms_max = Ts_ms;
   }
 
-  //Время в работе [мс].
+  // Время в работе [мс].
   Uptime_ms = Uptime_ms + ((uint64_t)Ts_ms);
-  //Время в работе [с].
+  // Время в работе [с].
   Uptime_s = (uint32_t)(Uptime_ms / 1000);
 
   return;

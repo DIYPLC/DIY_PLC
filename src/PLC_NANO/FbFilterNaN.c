@@ -32,9 +32,9 @@ void FbFilterNaN(struct DbFilterNaN *p)
   return;
 }
 
-//Если In==(NaN или Inf или -Inf) то Out=0 иначе Out=In.
+// Если In==(NaN или Inf или -Inf) то Out=0 иначе Out=In.
 // hex 7F800000 = bin 01111111_10000000_00000000_00000000
-//Стандарт IEEE 754.
+// Стандарт IEEE 754.
 
 // @COPYLEFT ALL WRONGS RESERVED :)
 // Author: VA

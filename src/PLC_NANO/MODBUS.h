@@ -5,8 +5,8 @@ extern "C" {
 #endif
 
 #define F_CPU 16000000UL      // Arduino Nano quartz resonator Hz.
-#define REG_HOLDING_START 1   //Смещение адреса.
-#define REG_HOLDING_NREGS 16  //Количество регистров.
+#define REG_HOLDING_START 1   // Смещение адреса.
+#define REG_HOLDING_NREGS 16  // Количество регистров.
 
 typedef enum {
   MB_ENOERR,    /*!< no error. */

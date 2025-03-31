@@ -10,7 +10,7 @@
 void FbTriggerRS(struct DbTriggerRS *p)
 {
 
-  //RS- Триггер.
+  // RS- Триггер.
   Q = (Q or S) and (not(R));
 
   return;

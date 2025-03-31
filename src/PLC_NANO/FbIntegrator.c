@@ -15,9 +15,9 @@
 void FbIntegrator(struct DbIntegrator *p)
 {
 
-  if (true) //Используем прямоугольный интегратор т.к. его обычно достаточно.
+  if (true) // Используем прямоугольный интегратор т.к. его обычно достаточно.
   {
-    Out = Out + In * Ts; //Прямоугольный интегратор
+    Out = Out + In * Ts; // Прямоугольный интегратор
   }
   else
   {
@@ -25,17 +25,17 @@ void FbIntegrator(struct DbIntegrator *p)
     InPrevious = In;
   }
 
-  if (Reset) //Начальные условия интегрирования применяются при сбросе.
+  if (Reset) // Начальные условия интегрирования применяются при сбросе.
   {
     Out = InitValue;
   }
 
-  if (Out >= OutMax) //Ограничение верх.
+  if (Out >= OutMax) // Ограничение верх.
   {
     Out = OutMax;
   }
 
-  if (Out <= OutMin) //Ограничение низ.
+  if (Out <= OutMin) // Ограничение низ.
   {
     Out = OutMin;
   }

@@ -3,39 +3,39 @@
 #include <iso646.h>
 #include "FbBlink.h"
 
-#define Time_on_ms  p->Time_on_ms
+#define Time_on_ms p->Time_on_ms
 #define Time_off_ms p->Time_off_ms
-#define Ts_ms       p->Ts_ms
-#define Reset       p->Reset
-#define Out         p->Out
-#define Timer1      p->Timer1
-#define State1      p->State1
+#define Ts_ms p->Ts_ms
+#define Reset p->Reset
+#define Out p->Out
+#define Timer1 p->Timer1
+#define State1 p->State1
 
-enum STATES //Номера состояний
+enum STATES  // Номера состояний.
 {
-  STATE_RESET = 0, //Сброс.
-  STATE_ON    = 1, //Включить лампочку на заданное время.
-  STATE_OFF   = 2  //Выключить лампочку на заданное время.
+  STATE_RESET = 0,  // Сброс.
+  STATE_ON = 1,     // Включить лампочку на заданное время.
+  STATE_OFF = 2     // Выключить лампочку на заданное время.
 };
 
-void FbBlink(struct DbBlink *p)
-{
+void FbBlink(struct DbBlink *p) {
 
-  //Версия 1. Универсальная версия с графом состояния.
-  if (Reset) { //Сброс при перезагрузке.
+#if (1)  // ON.
+  // Версия 1. Универсальная версия с графом состояния.
+  if (Reset) {  // Сброс при перезагрузке.
     State1 = STATE_RESET;
   }
 
-  switch (State1) //Граф состояний.
+  switch (State1)  // Граф состояний.
   {
 
-    case STATE_RESET: //Сброс.
+    case STATE_RESET:  // Сброс.
       Out = false;
       Timer1 = 0;
       State1 = STATE_ON;
       break;
 
-    case STATE_ON: //Включить лампочку на заданное время.
+    case STATE_ON:  // Включить лампочку на заданное время.
       Out = true;
       Timer1 = Timer1 + Ts_ms;
       if (Timer1 >= Time_on_ms) {
@@ -44,7 +44,7 @@ void FbBlink(struct DbBlink *p)
       }
       break;
 
-    case STATE_OFF: //Выключить лампочку на заданное время.
+    case STATE_OFF:  // Выключить лампочку на заданное время.
       Out = false;
       Timer1 = Timer1 + Ts_ms;
       if (Timer1 >= Time_off_ms) {
@@ -53,41 +53,35 @@ void FbBlink(struct DbBlink *p)
       }
       break;
 
-    default: //RESET при неопределенном состоянии.
+    default:  // RESET при неопределенном состоянии.
       State1 = STATE_RESET;
       break;
-
   }
+#endif
 
-  /*
-    //Версия 2. Простая для понимания версия.
-    //Формируем период.
-    if ((Timer1 >= (Time_on_ms + Time_off_ms)) or Reset)
-    {
+#if (0)  // OFF.
+  // Версия 2. Простая для понимания версия.
+  // Формируем период.
+  if ((Timer1 >= (Time_on_ms + Time_off_ms)) or Reset) {
     Timer1 = 0;
-    }
-    else
-    {
+  } else {
     Timer1 = Timer1 + Ts_ms;
-    }
-    //Формируем время импульса.
-    if (Timer1 <= Time_on_ms)
-    {
+  }
+  // Формируем время импульса.
+  if (Timer1 <= Time_on_ms) {
     Out = true;
-    }
-    else
-    {
+  } else {
     Out = false;
-    }
-  */
+  }
+#endif
 
-  /*
-    //Версия 3. Простая для компилятора.
-    //Формируем период.
-    Timer1 = (Timer1 + Ts_ms) * ((Timer1 <= (Time_on_ms + Time_off_ms)) and not(Reset));
-    //Формируем время импульса.
-    Out = (Timer1 <= Time_on_ms);
-  */
+#if (0)  // OFF.
+  // Версия 3. Простая для компилятора.
+  // Формируем период.
+  Timer1 = (Timer1 + Ts_ms) * ((Timer1 <= (Time_on_ms + Time_off_ms)) and not(Reset));
+  // Формируем время импульса.
+  Out = (Timer1 <= Time_on_ms);
+#endif
 
   return;
 }

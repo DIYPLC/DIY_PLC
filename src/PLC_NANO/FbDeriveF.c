@@ -12,7 +12,7 @@
 void FbDeriveF(struct DbDeriveF *p)
 {
 
-  //W(s)=s/(1+Tdf*s) при Tdf=1/Kdf и Ts->0.
+  // W(s)=s/(1+Tdf*s) при Tdf=1/Kdf и Ts->0.
   if (Kdf <= 0.0)
   {
     Dintegral = 0.0;

@@ -14,10 +14,10 @@
 void FbRamp(struct DbRamp *p)
 {
 
-  AccMode = (In  > Out); //Активен режим ускорения.
-  DecMode = (In  < Out); //Активен режим замедления.
+  AccMode = (In  > Out); // Активен режим ускорения.
+  DecMode = (In  < Out); // Активен режим замедления.
 
-  //Режим замедления.
+  // Режим замедления.
   if (DecMode)
   {
     if (TDec <= 0.0)
@@ -30,7 +30,7 @@ void FbRamp(struct DbRamp *p)
     }
   }
 
-  //Режим ускорения.
+  // Режим ускорения.
   if (AccMode)
   {
     if (TAcc <= 0.0)
@@ -43,7 +43,7 @@ void FbRamp(struct DbRamp *p)
     }
   }
 
-  //Установившийся режим.
+  // Установившийся режим.
   if ((AccMode and (Out >= In)) or (DecMode and (Out <= In)) or (In = Out))
   {
     Out = In;

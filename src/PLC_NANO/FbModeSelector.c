@@ -13,27 +13,27 @@
 #define LampAuto     p->LampAuto
 #define State1       p->State1
 
-enum STATES //Номера состояний
+enum STATES // Номера состояний.
 {
-  STATE_STOP   = 0, //Состояние "СТОП РЕЖИМ".
-  STATE_MANUAL = 1, //Состояние "РУЧНОЙ РЕЖИМ".
-  STATE_AUTO   = 2  //Состояние "АВТОМАТИЧЕСКИЙ РЕЖИМ".
+  STATE_STOP   = 0, // Состояние "СТОП РЕЖИМ".
+  STATE_MANUAL = 1, // Состояние "РУЧНОЙ РЕЖИМ".
+  STATE_AUTO   = 2  // Состояние "АВТОМАТИЧЕСКИЙ РЕЖИМ".
 };
 
 void FbModeSelector(struct DbModeSelector *p)
 {
 
-  //Временные переменные, не сохраняемые.
-  bool StateTaboo; //Флаг запрещенного состояния входов.
+  // Временные переменные, не сохраняемые.
+  bool StateTaboo; // Флаг запрещенного состояния входов.
 
-  //Запрещенное состояние: нажата может быть только одна кнопка.
+  // Запрещенное состояние: нажата может быть только одна кнопка.
   StateTaboo =
     ((ButtonStop and ButtonManual and ButtonAuto) or
      (not(ButtonStop) and ButtonManual and ButtonAuto) or
      (ButtonStop and not(ButtonManual) and ButtonAuto) or
      (ButtonStop and ButtonManual and not(ButtonAuto)) );
 
-  //При перезагрузке контроллера режим СТОП.
+  // При перезагрузке контроллера режим СТОП.
   if (Reset or StateTaboo)
   {
     State1     = STATE_STOP;
@@ -46,11 +46,11 @@ void FbModeSelector(struct DbModeSelector *p)
     switch (State1)
     {
 
-      case STATE_STOP: //Режим СТОП.
+      case STATE_STOP: // Режим СТОП.
         LampStop   = true ;
         LampManual = false;
         LampAuto   = false;
-        //Переход СТОП -> РУЧНОЙ.
+        // Переход СТОП -> РУЧНОЙ.
         if (ButtonManual)
         {
           State1     = STATE_MANUAL;
@@ -58,7 +58,7 @@ void FbModeSelector(struct DbModeSelector *p)
           LampManual = true ;
           LampAuto   = false;
         }
-        //Переход СТОП -> АВТОМАТ.
+        // Переход СТОП -> АВТОМАТ.
         if (ButtonAuto and not(Error))
         {
           State1     = STATE_AUTO;
@@ -68,11 +68,11 @@ void FbModeSelector(struct DbModeSelector *p)
         }
         break;
 
-      case STATE_MANUAL: //Режим РУЧНОЙ.
+      case STATE_MANUAL: // Режим РУЧНОЙ.
         LampStop   = false;
         LampManual = true ;
         LampAuto   = false;
-        //Переход РУЧНОЙ -> СТОП.
+        // Переход РУЧНОЙ -> СТОП.
         if (ButtonStop)
         {
           State1     = 0;
@@ -80,7 +80,7 @@ void FbModeSelector(struct DbModeSelector *p)
           LampManual = false;
           LampAuto   = false;
         }
-        //Преход РУЧНОЙ -> АВТОМАТ.
+        // Преход РУЧНОЙ -> АВТОМАТ.
         if (ButtonAuto and not(Error))
         {
           State1     = STATE_AUTO;
@@ -90,11 +90,11 @@ void FbModeSelector(struct DbModeSelector *p)
         }
         break;
 
-      case STATE_AUTO: //Режим АВТОМАТ.
+      case STATE_AUTO: // Режим АВТОМАТ.
         LampStop   = false;
         LampManual = false;
         LampAuto   = true ;
-        //Переход АВТОМАТ -> СТОП.
+        // Переход АВТОМАТ -> СТОП.
         if (ButtonStop or Error)
         {
           State1     = STATE_STOP;
@@ -102,7 +102,7 @@ void FbModeSelector(struct DbModeSelector *p)
           LampManual = false;
           LampAuto   = false;
         }
-        //Переход АВТОМАТ -> РУЧНОЙ.
+        // Переход АВТОМАТ -> РУЧНОЙ.
         if (ButtonManual)
         {
           State1     = STATE_MANUAL;
@@ -112,7 +112,7 @@ void FbModeSelector(struct DbModeSelector *p)
         }
         break;
 
-      default: //СТОП при неопределенном состоянии.
+      default: // СТОП при неопределенном состоянии.
         State1 = STATE_STOP;
         break;
     }

@@ -9,11 +9,11 @@
 
 void FbDelayN(struct DbDelayN *p)
 {
-  //W(Z)=Z^(-100)
+  // W(Z)=Z^(-100)
   Out = Buffer[98];
-  for (uint8_t i = 98; i >= 1; i = i - 1) //i с 98 до 1 с шагом -1
+  for (uint8_t i = 98; i >= 1; i = i - 1) // i с 98 до 1 с шагом -1
   {
-    Buffer[i] = Buffer[i - 1]; //Buffer[0]...Buffer[98]
+    Buffer[i] = Buffer[i - 1]; // Buffer[0]...Buffer[98]
   }
   Buffer[0] = In;
 

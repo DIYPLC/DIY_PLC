@@ -34,32 +34,32 @@ extern "C"
 #include "GlobalVar.h"
 
 // Базовые блоки обработки аналоговых сигналов, упорядочил по частоте использования.
-#include "FbPIDcontrol.h"       //LIB_PLC Регулятор ПИД.
-#include "Fb2PosControl.h"      //LIB_PLC Регулятор двухпозиционный.
-#include "Fb3PosControl.h"      //LIB_PLC Регулятор трехпозиционный.
-#include "FbScale.h"            //LIB_PLC Линейное преобразование.
-#include "FbLimit.h"            //LIB_PLC Амплитудный ограничитель.
-#include "FbRamp.h"             //LIB_PLC Рампа разгона торможения.
-#include "FbFilterA.h"          //LIB_PLC Апериодическое звено первого порядка.
-#include "FbDeriveF.h"          //LIB_PLC Производная с фильтрацией.
-#include "FbGSS.h"              //LIB_PLC Генератор сигналов и псевдослучайных чисел.
-#include "FbFilterNaN.h"        //LIB_PLC Фильтр NaN и Inf для чисел REAL.
-#include "FbSoftPWM.h"          //LIB_PLC ШИМ генератор двухканальный.
-#include "FbDelayN.h"           //LIB_PLC Задержка на N тактов.
-#include "FbIntegrator.h"       //LIB_PLC Интегратор W(s)=1/s.
-#include "FbDeadBand.h"         //LIB_PLC Зона нечувствительности.
+#include "FbPIDcontrol.h"       // LIB_PLC Регулятор ПИД.
+#include "Fb2PosControl.h"      // LIB_PLC Регулятор двухпозиционный.
+#include "Fb3PosControl.h"      // LIB_PLC Регулятор трехпозиционный.
+#include "FbScale.h"            // LIB_PLC Линейное преобразование.
+#include "FbLimit.h"            // LIB_PLC Амплитудный ограничитель.
+#include "FbRamp.h"             // LIB_PLC Рампа разгона торможения.
+#include "FbFilterA.h"          // LIB_PLC Апериодическое звено первого порядка.
+#include "FbDeriveF.h"          // LIB_PLC Производная с фильтрацией.
+#include "FbGSS.h"              // LIB_PLC Генератор сигналов и псевдослучайных чисел.
+#include "FbFilterNaN.h"        // LIB_PLC Фильтр NaN и Inf для чисел REAL.
+#include "FbSoftPWM.h"          // LIB_PLC ШИМ генератор двухканальный.
+#include "FbDelayN.h"           // LIB_PLC Задержка на N тактов.
+#include "FbIntegrator.h"       // LIB_PLC Интегратор W(s)=1/s.
+#include "FbDeadBand.h"         // LIB_PLC Зона нечувствительности.
 
 // Базовые дискретные блоки, упорядочил по частоте использования.
-#include "FbModeSelector.h"     //LIB_PLC Переключатель режимов работы.
-#include "FbTriggerRS.h"        //LIB_PLC Триггер RS.
-#include "FbEdgeNeg.h"          //LIB_PLC Детектор ниспадающего фронта.
-#include "FbEdgePos.h"          //LIB_PLC Детектор нарастающего фронта.
-#include "FbTimerTon.h"         //LIB_PLC Таймер TON.
-#include "FbTimerTof.h"         //LIB_PLC Таймер TOF.
-#include "FbWordToBits.h"       //LIB_PLC Преобразование слова в 16 бит.
-#include "FbBitsToWord.h"       //LIB_PLC Преобразование 16 бит в слово.
-#include "FbBlink.h"            //LIB_PLC Мигающий светодиод.
-#include "FbCounter.h"          //LIB_PLC Счетчик импульсов.
+#include "FbModeSelector.h"     // LIB_PLC Переключатель режимов работы.
+#include "FbTriggerRS.h"        // LIB_PLC Триггер RS.
+#include "FbEdgeNeg.h"          // LIB_PLC Детектор ниспадающего фронта.
+#include "FbEdgePos.h"          // LIB_PLC Детектор нарастающего фронта.
+#include "FbTimerTon.h"         // LIB_PLC Таймер TON.
+#include "FbTimerTof.h"         // LIB_PLC Таймер TOF.
+#include "FbWordToBits.h"       // LIB_PLC Преобразование слова в 16 бит.
+#include "FbBitsToWord.h"       // LIB_PLC Преобразование 16 бит в слово.
+#include "FbBlink.h"            // LIB_PLC Мигающий светодиод.
+#include "FbCounter.h"          // LIB_PLC Счетчик импульсов.
 
 #ifdef __cplusplus
 }

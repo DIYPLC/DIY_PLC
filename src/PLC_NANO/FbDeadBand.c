@@ -11,7 +11,7 @@
 void FbDeadBand(struct DbDeadBand *p)
 {
 
-  //Зона нечувствительности.
+  // Зона нечувствительности.
   if ((ERMIN < In) and (In < ERMAX))
   {
     Out = 0.0;

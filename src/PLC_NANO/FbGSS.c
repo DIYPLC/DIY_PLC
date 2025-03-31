@@ -23,13 +23,13 @@
 void FbGSS(struct DbGSS *p)
 {
 
-  //Временные переменные, не сохраняемые.
+  // Временные переменные, не сохраняемые.
   uint32_t Tmp;
 
-  Sine =   Amplitude * sinf(2 * M_PI * (1.0 / Period) * CurrentTime + Phase) + Offset; //Синус.
-  Cosine = Amplitude * cosf(2 * M_PI * (1.0 / Period) * CurrentTime + Phase) + Offset; //Косинус.
+  Sine =   Amplitude * sinf(2 * M_PI * (1.0 / Period) * CurrentTime + Phase) + Offset;
+  Cosine = Amplitude * cosf(2 * M_PI * (1.0 / Period) * CurrentTime + Phase) + Offset;
 
-  if (CurrentTime < PulseTime) //Прямоугольные импульсы.
+  if (CurrentTime < PulseTime) // Прямоугольные импульсы.
   {
     RectangleR = Amplitude + Offset;
     RectangleB = true;
@@ -40,7 +40,7 @@ void FbGSS(struct DbGSS *p)
     RectangleB = false;
   }
 
-  if (CurrentTime <= (Period * 0.5)) //Треугольные импульсы.
+  if (CurrentTime <= (Period * 0.5)) // Треугольные импульсы.
   {
     IntegratorTriangle = IntegratorTriangle + Ts;
   }
@@ -53,16 +53,16 @@ void FbGSS(struct DbGSS *p)
     Triangle = (((IntegratorTriangle * 2.0) / Period) * Amplitude) + Offset;
   }
 
-  //Псевдослучайные числа линейный конгруэнтный метод.
+  // Псевдослучайные числа линейный конгруэнтный метод.
   SummatorRnd = SummatorRnd * 1103515245 + 12345;
-  //принудительно отбрасывающей младшие 16 и один старший разряд.
+  // Принудительно отбрасывающей младшие 16 и один старший разряд.
   Tmp = SummatorRnd & 0b01111111111111110000000000000000;
-  //Арифметический сдвиг вправо на 16бит.
+  // Арифметический сдвиг вправо на 16бит.
   Tmp = Tmp >> 16;
-  //Масштабирование 0...32767 -> 0...1
+  // Масштабирование 0...32767 -> 0...1
   Prnd = ( ((float)Tmp) / 32767.0 ) * Amplitude + Offset;
 
-  CurrentTime = CurrentTime + Ts; //Формирование периода.
+  CurrentTime = CurrentTime + Ts; // Формирование периода.
   if (CurrentTime >= Period)
   {
     CurrentTime = 0.0;

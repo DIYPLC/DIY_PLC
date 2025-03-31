@@ -21,21 +21,21 @@
 #define SetBit(Var,Bit)   ( (Var) = (Var) |  (1 << (Bit)) )
 #define ResetBit(Var,Bit) ( (Var) = (Var) & ~(1 << (Bit)) )
 
-struct GlobalVar GV = {0}; //Глобальные переменные ПЛК.
+struct GlobalVar GV = {0}; // Глобальные переменные ПЛК.
 static struct DbTs DbTs1 = {0};
 extern uint16_t usRegHoldingBuf[];
 
 int main(void)
 {
   GPIO_INIT();
-  TIMER2_INIT(); //Настраиваем прерывание каждые 1ms.
+  TIMER2_INIT(); // Настраиваем прерывание каждые 1ms.
 
   eMBInit(1, 0, 9600, MB_PAR_NONE);  // MODBUS RTU SLAVE ADDRESS 1, USART0 9600 8N1.
-  sei(); //Включить все прерывания.
+  sei(); // Включить все прерывания.
   eMBEnable();
 
   GV.Reset = true;
-  //Расчет времени скана.
+  // Расчет времени скана.
   //             DbTs
   //    +---------------------+
   //    |        FbTs         |
@@ -44,15 +44,15 @@ int main(void)
   //    |            Ts_ms_max|->-
   //    |             Uptime_s|->-
   //    +---------------------+
-  DbTs1.millis = GV.millis_ms   ; //millis() Arduino.
-  DbTs1.Reset  = GV.Reset       ; //Сброс при перезагрузке.
-  FbTs(&DbTs1)                  ; //Расчет времени скана.
-  GV.Ts_ms     = DbTs1.Ts_ms    ; //Шаг дискретизации по времени [мс].
-  GV.Ts        = DbTs1.Ts       ; //Шаг дискретизации по времени [с].
-  GV.Ts_ms_max = DbTs1.Ts_ms_max; //Максимальное время скана [мс].
-  GV.Uptime_s  = DbTs1.Uptime_s ; //Время в работе [мс].
+  DbTs1.millis = GV.millis_ms   ; // millis() Arduino.
+  DbTs1.Reset  = GV.Reset       ; // Сброс при перезагрузке.
+  FbTs(&DbTs1)                  ; // Расчет времени скана.
+  GV.Ts_ms     = DbTs1.Ts_ms    ; // Шаг дискретизации по времени [мс].
+  GV.Ts        = DbTs1.Ts       ; // Шаг дискретизации по времени [с].
+  GV.Ts_ms_max = DbTs1.Ts_ms_max; // Максимальное время скана [мс].
+  GV.Uptime_s  = DbTs1.Uptime_s ; // Время в работе [мс].
 
-  FcTaskCyclic(GV.Reset, GV.Ts_ms); //Задача выполняется с плавающим временем цикла.
+  FcTaskCyclic(GV.Reset, GV.Ts_ms); // Задача выполняется с плавающим временем цикла.
 
   while (1)
   {
@@ -60,7 +60,7 @@ int main(void)
     (void)eMBPoll();
 
     GV.Reset = false;
-    //Расчет времени скана.
+    // Расчет времени скана.
     //             DbTs
     //    +---------------------+
     //    |        FbTs         |
@@ -69,15 +69,15 @@ int main(void)
     //    |            Ts_ms_max|->-
     //    |             Uptime_s|->-
     //    +---------------------+
-    DbTs1.millis = GV.millis_ms   ; //millis() Arduino.
-    DbTs1.Reset  = GV.Reset       ; //Сброс при перезагрузке.
-    FbTs(&DbTs1)                  ; //Расчет времени скана.
-    GV.Ts_ms     = DbTs1.Ts_ms    ; //Шаг дискретизации по времени [мс].
-    GV.Ts        = DbTs1.Ts       ; //Шаг дискретизации по времени [с].
-    GV.Ts_ms_max = DbTs1.Ts_ms_max; //Максимальное время скана [мс].
-    GV.Uptime_s  = DbTs1.Uptime_s ; //Время в работе [мс].
+    DbTs1.millis = GV.millis_ms   ; // millis() Arduino.
+    DbTs1.Reset  = GV.Reset       ; // Сброс при перезагрузке.
+    FbTs(&DbTs1)                  ; // Расчет времени скана.
+    GV.Ts_ms     = DbTs1.Ts_ms    ; // Шаг дискретизации по времени [мс].
+    GV.Ts        = DbTs1.Ts       ; // Шаг дискретизации по времени [с].
+    GV.Ts_ms_max = DbTs1.Ts_ms_max; // Максимальное время скана [мс].
+    GV.Uptime_s  = DbTs1.Uptime_s ; // Время в работе [мс].
 
-    FcTaskCyclic(GV.Reset, GV.Ts_ms); //Задача выполняется с плавающим временем цикла.
+    FcTaskCyclic(GV.Reset, GV.Ts_ms); // Задача выполняется с плавающим временем цикла.
     PLC_Digital_output_cyclic(&GV);
   }
 }

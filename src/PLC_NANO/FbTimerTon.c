@@ -11,36 +11,36 @@
 
 void FbTimerTon(struct DbTimerTon *p)
 {
-  if (TimeDelayOn > 0) //Таймер включен.
+  if (TimeDelayOn > 0) // Таймер включен.
   {
-    if (In) //На входе 1.
+    if (In) // На входе 1.
     {
-      if (Out) //На выходе 1.
+      if (Out) // На выходе 1.
       {
         Out = true;
         Timer1 = 0;
       }
-      else //На выходе 0.
+      else // На выходе 0.
       {
-        if (Timer1 >= TimeDelayOn) //Задержка включения закончилась.
+        if (Timer1 >= TimeDelayOn) // Задержка включения закончилась.
         {
           Out = true;
           Timer1 = 0;
         }
-        else //Задержка включения активна.
+        else // Задержка включения активна.
         {
           Out = false;
           Timer1 = Timer1 + Ts_ms;
         }
       }
     }
-    else //Если на входе 0 то на выходе тоже 0.
+    else // Если на входе 0 то на выходе тоже 0.
     {
       Out = false;
       Timer1 = 0;
     }
   }
-  else //Таймер выключен.
+  else // Таймер выключен.
   {
     Out = In;
     Timer1 = 0;

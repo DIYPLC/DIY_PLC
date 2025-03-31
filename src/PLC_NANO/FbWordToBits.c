@@ -24,7 +24,7 @@
 void FbWordToBits(struct DbWordToBits *p)
 {
 
-  //Логическое условие без оператора if.
+  // Логическое условие без оператора if.
   Out0  = ((In bitand 0b0000000000000001) != 0);
   Out1  = ((In bitand 0b0000000000000010) != 0);
   Out2  = ((In bitand 0b0000000000000100) != 0);
