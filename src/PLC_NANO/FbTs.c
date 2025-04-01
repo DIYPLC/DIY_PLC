@@ -45,7 +45,8 @@ void FbTs(struct DbTs *p)
   // sizeof(float) = 4byte = 32bit
   // sizeof(double) = 8byte = 64bit
 
-  Time_previous_ms = millis; // Запомнить предидущее состояние.
+  // Запомнить предидущее состояние.
+  Time_previous_ms = millis;
 
   // Шаг дискретизации по времени [с].
   Ts = ((float)Ts_ms) * 0.001;
