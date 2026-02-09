@@ -1,0 +1,158 @@
+-Инструкция по интеграции.
+MODBUS + STM32
+Связь MODBUS RTU SLAVE на контроллере Blue Pill STM32F103C8T6
+
+-MODBUS RTU SLAVE нужен для:
+Если нужно разработать ПЛК и подключить его к SCADA по RS485.
+Если нужно разработать модуль удалленного ввода/вывода дискретных/аналоговых сигналов и подключить его к ПЛК по RS485.
+Если нужно разработать датчик и подключить его к ПЛК по RS485.
+Если нужно разработать исполнительный механизм и подключить его к ПЛК по RS485.
+
+-Ссылки.
+https://www.embedded-solutions.at/en/services/modbus/
+https://www.embedded-experts.at/en/freemodbus/about/
+https://github.com/cwalter-at/freemodbus
+https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32/tree/master/FreeModbus
+https://habr.com/ru/articles/279747/
+https://www.freemodbus.org/api/index.html
+
+Библиотека: freemodbus
+Драйвер RS485: adm2486brwz / MAX3471EUA
+
+-Сознание проекта в STM32CubeIDE 1.6.1
+Имя проекта: DIY_PLC_V3.1
+Процессор: STM32F103C8T6
+Язык: C
+
+-Настройка тактирования процесора.
+CubeIDE\Pinout&Configuration\RCC\HSE = Crystal/Ceramical Resonator
+CubeIDE\ClockConfiguration\HSE = 8MHz //Кварцевый резонатор.
+CubeIDE\ClockConfiguration\HCLK = 72MHz //Частота ядра.
+
+-Настройка программатора / отладчика SWD ST-LINK V2
+CubeIDE\Pinout&Configuration\SYS\Debug = Serial Wire
+Данная настройка позволяет смотреть в работе статические переменные в программе через STM32CubeMonitor.
+
+-Управление переключением приема / передачи микросхемы RS485
+CubeIDE\Pinout&Configuration\GPIO\PA5 = GPIO_Output
+CubeIDE\Pinout&Configuration\GPIO\User Label = RS485_RTS
+Интеграция происходит по имени "RS485_RTS_Pin" main.h -> port.h -> portserial.c
+
+-Настраиваем таймер для freemodbus
+Таймер будет генерировать прерывание каждые 50 мкс если есть обмен по сети MODBUS.
+CubeIDE\Pinout&Configuration\TIM3\Internal Clock = 1
+CubeIDE\Pinout&Configuration\TIM3\ParameterSettings\Prescaler = 71 //Вероятно связанно с частотой 72Мгц
+CubeIDE\Pinout&Configuration\TIM3\ParameterSettings\CounterPeriod = 49 //Вероятно задание периода 50мкс
+CubeIDE\Pinout&Configuration\TIM3\NVIC Settings\Enabled = 1 //Включаем прерывание
+Функция вызывается каждые 50мкс если есть обмен по MODBUS
+porttimer.c
+HAL_TIM_PeriodElapsedCallback()
+stm32f1xx_it.h
+void TIM3_IRQHandler(void) 
+
+-Настраиваем USART2 9600 8N1 для freemodbus
+CubeIDE\Pinout&Configuration\USART2\Mode = Asynchronous
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Baud Rate = 9600
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Word Length = 8 Bits including parity
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Parity = None //Проверка на четность
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Stop Bits = 1
+CubeIDE\Pinout&Configuration\USART2\NVIC Settings\Enabled = 1 //Включаем прерывание
+*Попытка использовать USART1 пока не удалась.
+*Настройки 9600 8E1 не имеют смысла тк при тестировании выяснилось что freemodbus проболжает работать при ошибке в бите четности.
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Baud Rate = 9600
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Word Length = 9 Bits including parity
+CubeIDE\Pinout&Configuration\USART2\ParameterSettings\Parity = Even //Проверка на четность
+
+-Подлючение библиотеки freemodbus
+Папку FreeModbus копируем в папку проекта C:\Users\xyz\STM32CubeIDE\workspace_1.6.1\DIY_PLC_V3.1\Drivers
+компилируем проект.
+если проект не копилируется и ругается что не может найти port.h то
+тыкаем на все внутренние папки библиотеки и ставим все галки в пукте
+Add/remove include path...
+
+-Интеграция freemodbus в main.c
+...
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "mb.h" //MODBUS RTU SLAVE
+//#include "mb_m.h" //MODBUS RTU MASTER
+/* USER CODE END Includes */
+...
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define MODBUS_RTU_SLAVE_ADDRESS  1
+#define MW usSRegHoldBuf //MODBUS_HOLDING_REGISTER
+/* USER CODE END PD */
+...
+/* USER CODE BEGIN PV */
+extern USHORT usSRegHoldBuf[]; //MODBUS RTU SLAVE HOLDING REGISTERS
+/* USER CODE END PV */
+...
+	/* USER CODE BEGIN 2 */
+	eMBInit(MB_RTU, MODBUS_RTU_SLAVE_ADDRESS, &huart2, (ULONG) huart2.Init.BaudRate, &htim3); //MODBUS RTU SLAVE
+	eMBEnable(); //MODBUS RTU SLAVE
+
+	MW[0]= 3;
+	MW[1]= 2;
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+	while (1) {
+
+		MW[2] = MW[0] + MW[1];
+
+		eMBErrorCode retu;
+		retu = eMBPoll(); //MODBUS RTU SLAVE
+		if (retu == MB_ENOERR) {
+			; //IF OK
+		}
+
+    /* USER CODE END WHILE */
+
+-Количество MODBUS и типы регистров задается тут.
+user_mb_app.h
+#define S_REG_HOLDING_START           0
+#define S_REG_HOLDING_NREGS           123
+
+-Максимальная длинна пакета MODBUS задается тут.
+mbrtu.c
+#define MB_SER_PDU_SIZE_MAX     256     /*!< Maximum size of a Modbus RTU frame. */
+
+-Файлы.
+mb_m.h //MODBUS RTU MASTER
+
+-Файлы можно удалить без проблем:
+mb_m.c
+mbtcp.c
+mbtcp.h
+mbascii.c
+mbascii.h
+user_mb_app_m.c
+user_mb_app_m.h
+mbfunccoils_m.c
+mbfuncdisc_m.c
+mbfuncholding_m.c
+mbfuncinput_m.c
+mbrtu_m.c
+porttimer_m.c
+portserial_m.c
+portevent_m.c
+mbfuncdiag.c пустышка
+
+-Файлы можно удалить с правкой.
+mb_m.h Удалить строчку user_mb_app.h -> #include "mb_m.h"
+
+-Потенциально опасная функция можно изменить адрес устройства и оно перестанет работать.
+mbfuncother.c -> eMBSetSlaveID();
+
+-Если попался неоригинальный процессор то STM32CubeIDE 1.6.1 дает ошибку:
+Failed to start GDB server
+Error in initializing ST-LINK device.
+Reason: (18) Could not verify ST device! Abort connection.
+Это можно обойти загрузив прошивку: C:\Users\xyz\STM32CubeIDE\workspace_1.6.1\DIY_PLC_V3.1\Debug\DIY_PLC_V3.1.bin
+Программой: STM32 ST-LINK Utility
+При этом будет работать STM32CubeMonitor
+
+-При связи через микросхему FT232RL иногда пропадают куски пакетов MODBUS.
+-При связи через микросхему CH340G пакеты MODBUS не пропадаю связь стабильная.
